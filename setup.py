@@ -6,6 +6,6 @@ setup(
     version="0.1.0",
     package_dir={"": "src"},
     packages=find_packages("src"),
-    entry_points={"console_scripts": ["replicable=replicable_cli.__main__:main"]},
+    entry_points={"console_scripts": ["replicable=replicable.cli:main"]},
 )
 

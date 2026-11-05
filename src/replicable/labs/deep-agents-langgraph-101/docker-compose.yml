@@ -1,0 +1,18 @@
+services:
+  demo:
+    build:
+      context: .
+    environment:
+      MODEL_PROVIDER: ${MODEL_PROVIDER:-openai}
+      MODEL_NAME: ${MODEL_NAME:-gpt-4.1-mini}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      LANGSMITH_TRACING: ${LANGSMITH_TRACING:-false}
+      LANGSMITH_API_KEY: ${LANGSMITH_API_KEY:-}
+      LANGSMITH_PROJECT: ${LANGSMITH_PROJECT:-replicable-deep-agents-langgraph-101}
+      PYTHONUNBUFFERED: "1"
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./notes:/app/notes:ro
+

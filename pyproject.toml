@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "replicable-labs"
+version = "0.1.0"
+description = "Runnable Replicable tech labs"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.scripts]
+replicable = "replicable_cli.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+

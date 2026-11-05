@@ -31,7 +31,21 @@ def explain_concept(concept: str) -> str:
     return "\n\n".join(matching) or f"No local note matched '{concept}'. Explain it from first principles."
 
 
+def require_model_credentials() -> None:
+    provider = os.environ.get("MODEL_PROVIDER", "openai")
+    if provider not in {"openai", "anthropic"}:
+        raise SystemExit("Choose openai or anthropic as the model provider.")
+    key_name = "OPENAI_API_KEY" if provider == "openai" else "ANTHROPIC_API_KEY"
+    if not os.environ.get(key_name, "").strip():
+        raise SystemExit(
+            f"{key_name} is required for model calls. Restart with "
+            "'replicable labs start deep-agents-langgraph-101' and enter your "
+            "provider API key at the hidden prompt. LangSmith sign-in only authenticates tracing."
+        )
+
+
 def model_from_environment():
+    require_model_credentials()
     provider = os.environ.get("MODEL_PROVIDER", "openai")
     model_name = os.environ.get("MODEL_NAME")
     if not model_name:
@@ -110,6 +124,7 @@ def configure_langsmith() -> None:
 
 
 def main() -> None:
+    require_model_credentials()
     configure_langsmith()
     print("Replicable Lab: Deep Agents + LangGraph 101")
     print("Type 'exit' to stop. The outer workflow is LangGraph; the inner agent is Deep Agents.")

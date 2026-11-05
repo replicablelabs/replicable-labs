@@ -9,8 +9,8 @@ inspect both layers as you learn.
 
 - Docker Desktop
 - Python 3.9 or newer for the Replicable launcher
-- An OpenAI or Anthropic API key, unless the required provider credential is
-  already available through your local environment or organization setup
+- An OpenAI or Anthropic API key, supplied through your environment or the
+  launcher's hidden prompt
 - A LangSmith account with browser login (OAuth) or an API key, and access
   to a tracing destination
 - The official LangSmith CLI (v0.2.30 or newer) for browser login, declared
@@ -44,6 +44,11 @@ The launcher prompts for:
 - LangSmith sign-in (`browser` or `api-key`) when no saved login is available
 
 Choose `browser` to open LangSmith sign-in. An existing login is reused.
+The provider API key is required for model calls. For OpenAI, create a key at
+[OpenAI API keys](https://platform.openai.com/api-keys) and paste it at the
+hidden `OPENAI_API_KEY` prompt. Pressing Enter without a key stops startup.
+LangSmith browser sign-in authenticates tracing; this lab does not connect
+OpenAI or Anthropic browser sessions to model calls.
 
 It saves local settings to this exercise's ignored `.env` file, builds the
 Docker image, and opens an interactive chat. Type `exit` to stop.

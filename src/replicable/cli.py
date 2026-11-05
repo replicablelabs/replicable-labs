@@ -87,12 +87,18 @@ def _prompt_for_config(env_path: Path, *, require_langsmith: bool = False) -> No
     values["MODEL_NAME"] = model or input(f"Model ({default_model}): ").strip() or default_model
 
     key_name = "OPENAI_API_KEY" if provider == "openai" else "ANTHROPIC_API_KEY"
-    existing = values.get(key_name) or os.getenv(key_name)
+    existing = values.get(key_name, "").strip() or os.getenv(key_name, "").strip()
     if not existing:
-        print(f"No {key_name} found. Paste an API key, or press Enter to use an existing local/OIDC session.")
+        print(f"This lab needs a {provider} API key for model calls. Your LangSmith login is separate.")
+        if provider == "openai":
+            print("Create an OpenAI API key at https://platform.openai.com/api-keys.")
         secret = getpass.getpass(f"{key_name} (hidden): ").strip()
-        if secret:
-            values[key_name] = secret
+        if not secret:
+            raise SystemExit(f"{key_name} is required. Restart the lab and enter your provider API key at the hidden prompt.")
+        values[key_name] = secret
+    elif not values.get(key_name, "").strip():
+        # Keep shell-provided keys out of .env, and do not mask them with blanks.
+        values.pop(key_name, None)
 
     if require_langsmith:
         values["LANGSMITH_TRACING"] = "true"

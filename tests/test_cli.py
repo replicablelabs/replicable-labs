@@ -162,5 +162,40 @@ class RequiredLangSmithTests(unittest.TestCase):
         self.process.assert_not_called()
 
 
+    def test_empty_provider_key_stops_before_login_or_docker(self):
+        os.environ.pop("OPENAI_API_KEY")
+        self.secret.return_value = "  "
+        before = self.env_path.read_text()
+        with self.assertRaisesRegex(SystemExit, "OPENAI_API_KEY is required"):
+            cli.start_lab(self.lab.name)
+        self.process.assert_not_called()
+        self.prompt.assert_not_called()
+        self.assertEqual(self.env_path.read_text(), before)
+
+    def test_hidden_provider_key_is_forwarded_to_container(self):
+        os.environ.pop("OPENAI_API_KEY")
+        os.environ["LANGSMITH_API_KEY"] = "test-tracing-key"
+        self.secret.return_value = "test-entered-provider-key"
+        cli.start_lab(self.lab.name)
+        self.secret.assert_called_once_with("OPENAI_API_KEY (hidden): ")
+        self.assertEqual(self.process.call_args.kwargs["env"]["OPENAI_API_KEY"], "test-entered-provider-key")
+
+    def test_blank_saved_provider_key_does_not_mask_shell_key(self):
+        os.environ["LANGSMITH_API_KEY"] = "test-tracing-key"
+        self.env_path.write_text("OPENAI_API_KEY=\n")
+        cli.start_lab(self.lab.name)
+        self.secret.assert_not_called()
+        self.assertEqual(self.process.call_args.kwargs["env"]["OPENAI_API_KEY"], "test-provider-key")
+        self.assertNotIn("OPENAI_API_KEY", cli._load_env(self.env_path))
+
+    def test_anthropic_also_requires_its_provider_key(self):
+        os.environ["MODEL_PROVIDER"] = "anthropic"
+        self.secret.return_value = ""
+        with self.assertRaisesRegex(SystemExit, "ANTHROPIC_API_KEY is required"):
+            cli.start_lab(self.lab.name)
+        self.secret.assert_called_once_with("ANTHROPIC_API_KEY (hidden): ")
+        self.process.assert_not_called()
+
+
 if __name__ == "__main__":
     unittest.main()

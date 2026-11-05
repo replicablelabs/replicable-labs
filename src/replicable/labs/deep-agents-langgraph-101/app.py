@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 from pathlib import Path
 from typing import TypedDict
@@ -48,7 +49,8 @@ def run_deep_agent(state: LabState) -> LabState:
         tools=[explain_concept],
         system_prompt=(
             "You are a patient teacher. Help the learner understand the difference "
-            "between LangGraph workflow control and the Deep Agents harness. Use the "
+            "between LangGraph workflow control, the Deep Agents harness, and "
+            "LangSmith observability. Use the "
             "local notes tool when useful. Always name which layer you are describing."
         ),
     )
@@ -79,9 +81,39 @@ def build_graph():
     return graph.compile()
 
 
+def configure_langsmith() -> None:
+    # Tracing is part of the exercise; learners do not need to enable a flag.
+    os.environ["LANGSMITH_TRACING"] = "true"
+    # Empty Compose entries must not override endpoint/workspace/profile values
+    # loaded by the SDK from a browser-login profile.
+    for key in ("LANGSMITH_ENDPOINT", "LANGSMITH_WORKSPACE_ID", "LANGSMITH_PROFILE", "LANGSMITH_API_KEY"):
+        if not os.environ.get(key, "").strip():
+            os.environ.pop(key, None)
+    if not os.environ.get("LANGSMITH_API_KEY"):
+        path = Path(os.environ.get("LANGSMITH_CONFIG_FILE") or Path.home() / ".langsmith" / "config.json")
+        try:
+            data = json.loads(path.read_text())
+            name = os.environ.get("LANGSMITH_PROFILE") or data.get("current_profile") or "default"
+            profile = data.get("profiles", {}).get(name, {})
+            oauth = profile.get("oauth") or {}
+            authenticated = profile.get("api_key") or oauth.get("access_token") or oauth.get("refresh_token")
+        except (OSError, ValueError, AttributeError, TypeError):
+            authenticated = False
+        if not authenticated:
+            raise SystemExit("Sign in to LangSmith through the launcher: replicable labs start deep-agents-langgraph-101. It will offer browser sign-in and mount your login into the container.")
+    if os.environ.get("LANGSMITH_AGENT_ID", "").strip():
+        # Agent addressing must not be combined with legacy project settings.
+        for key in ("LANGSMITH_PROJECT", "LANGCHAIN_PROJECT", "LANGCHAIN_SESSION"):
+            os.environ.pop(key, None)
+    elif not os.environ.get("LANGSMITH_PROJECT", "").strip():
+        os.environ["LANGSMITH_PROJECT"] = "replicable-deep-agents-langgraph-101"
+
+
 def main() -> None:
+    configure_langsmith()
     print("Replicable Lab: Deep Agents + LangGraph 101")
     print("Type 'exit' to stop. The outer workflow is LangGraph; the inner agent is Deep Agents.")
+    print("LangSmith tracing is enabled. Open LangSmith to inspect each question's trace.")
     workflow = build_graph()
     while True:
         try:

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import getpass
+import json
 import os
 import shutil
 import subprocess
@@ -29,7 +30,49 @@ def _write_env(path: Path, values: dict[str, str]) -> None:
     path.write_text("".join(f"{key}={value}\n" for key, value in values.items()))
 
 
-def _prompt_for_config(env_path: Path) -> None:
+def _langsmith_profile(environment: dict[str, str]) -> Path | None:
+    path = Path(environment.get("LANGSMITH_CONFIG_FILE") or Path.home() / ".langsmith" / "config.json").expanduser().resolve()
+    try:
+        data = json.loads(path.read_text())
+        name = environment.get("LANGSMITH_PROFILE") or data.get("current_profile") or "default"
+        profile = data.get("profiles", {}).get(name, {})
+        oauth = profile.get("oauth") or {}
+        if profile.get("api_key") or oauth.get("access_token") or oauth.get("refresh_token"):
+            return path
+    except (OSError, ValueError, AttributeError, TypeError):
+        pass
+    return None
+
+
+def _login_langsmith(values: dict[str, str], *, brewfile: Path) -> None:
+    environment = {**os.environ, **values}
+    if values.get("LANGSMITH_API_KEY", "").strip() or os.getenv("LANGSMITH_API_KEY", "").strip():
+        return
+    if _langsmith_profile(environment) is not None:
+        print("Using your saved LangSmith login.")
+        return
+
+    print("Sign in to LangSmith to record and inspect this lab's traces.")
+    method = input("LangSmith sign-in [browser/api-key] (browser): ").strip().lower() or "browser"
+    if method == "api-key":
+        secret = getpass.getpass("LANGSMITH_API_KEY (hidden): ").strip()
+        if not secret:
+            raise SystemExit("LangSmith login is required. Restart the lab to sign in.")
+        values["LANGSMITH_API_KEY"] = secret
+    elif method == "browser":
+        if shutil.which("langsmith") is None:
+            raise SystemExit(
+                "LangSmith login is required. Install the exercise's host dependencies with "
+                f"'brew bundle --file={brewfile}', then restart the lab to sign in."
+            )
+        status = subprocess.call(["langsmith", "auth", "login"], env=environment)
+        if status != 0 or _langsmith_profile(environment) is None:
+            raise SystemExit("LangSmith sign-in was not completed. Restart the lab to try again.")
+    else:
+        raise SystemExit("Choose browser or api-key for LangSmith sign-in.")
+
+
+def _prompt_for_config(env_path: Path, *, require_langsmith: bool = False) -> None:
     values = _load_env(env_path)
     provider = values.get("MODEL_PROVIDER") or os.getenv("MODEL_PROVIDER")
     if provider not in {"openai", "anthropic"}:
@@ -51,11 +94,15 @@ def _prompt_for_config(env_path: Path) -> None:
         if secret:
             values[key_name] = secret
 
-    values.setdefault("LANGSMITH_TRACING", "false")
-    if values.get("LANGSMITH_TRACING", "false").lower() == "true" and not (
-        values.get("LANGSMITH_API_KEY") or os.getenv("LANGSMITH_API_KEY")
-    ):
-        values["LANGSMITH_TRACING"] = "false"
+    if require_langsmith:
+        values["LANGSMITH_TRACING"] = "true"
+        for key in ("LANGSMITH_PROFILE", "LANGSMITH_CONFIG_FILE", "LANGSMITH_ENDPOINT", "LANGSMITH_WORKSPACE_ID"):
+            if not values.get(key, "").strip():
+                values.pop(key, None)
+        _login_langsmith(values, brewfile=env_path.with_name("Brewfile"))
+        if not values.get("LANGSMITH_API_KEY", "").strip():
+            # An empty example-file entry must not mask a key from the shell.
+            values.pop("LANGSMITH_API_KEY", None)
 
     _write_env(env_path, values)
     print(f"Saved local lab configuration to {env_path}. It is ignored by git.")
@@ -72,10 +119,16 @@ def start_lab(uid: str) -> int:
         raise SystemExit("Docker is required. Install Docker Desktop and try again.")
 
     env_path = lab_dir / ".env"
-    _prompt_for_config(env_path)
-    command = ["docker", "compose", "-f", str(compose_file), "run", "--rm", "demo"]
+    _prompt_for_config(env_path, require_langsmith=uid == "deep-agents-langgraph-101")
+    command = ["docker", "compose", "-f", str(compose_file), "run", "--build", "--rm"]
     process_env = os.environ.copy()
     process_env.update(_load_env(env_path))
+    profile = _langsmith_profile(process_env) if uid == "deep-agents-langgraph-101" else None
+    if profile is not None:
+        # Mount the directory so atomic OAuth token refreshes can be persisted.
+        command.extend(["--volume", f"{profile.parent}:/run/langsmith-profile"])
+        process_env["LANGSMITH_CONTAINER_CONFIG_FILE"] = f"/run/langsmith-profile/{profile.name}"
+    command.append("demo")
     return subprocess.call(command, cwd=lab_dir, env=process_env)
 
 

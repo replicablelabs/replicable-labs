@@ -1,0 +1,3 @@
+# Host dependency for LangSmith browser login and trace inspection.
+tap "langchain-ai/tap"
+brew "langchain-ai/tap/langsmith-cli"

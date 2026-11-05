@@ -2,7 +2,13 @@
 
 Runnable technical demos for learning by doing.
 
+Each exercise keeps its own installation and usage instructions in a README
+inside its exercise directory.
+
 ## Run the first lab
+
+See [`deep-agents-langgraph-101/README.md`](src/replicable/labs/deep-agents-langgraph-101/README.md)
+for the complete exercise-specific setup.
 
 Install Docker Desktop, then install this repository as a local command:
 

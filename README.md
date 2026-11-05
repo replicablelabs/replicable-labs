@@ -9,9 +9,25 @@ Install Docker Desktop, then install this repository as a local command:
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
+python -m pip install --upgrade pip
 python -m pip install -e .
 replicable labs start deep-agents-langgraph-101
 ```
+
+If this repository was already installed before an update, refresh the virtual
+environment and shell command cache before retrying:
+
+```bash
+python3 -m venv --clear .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install --no-cache-dir -e .
+hash -r
+which replicable
+```
+
+`which replicable` should point into `.venv/bin/replicable`, not a global
+`~/.local/bin/replicable` installation.
 
 The launcher prompts for an OpenAI or Anthropic provider, model, and API key if
 the corresponding environment variable is not already available. It writes

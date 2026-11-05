@@ -1,3 +1,0 @@
-[console_scripts]
-replicable = replicable_cli.__main__:main
-

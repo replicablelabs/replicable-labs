@@ -9,8 +9,8 @@ inspect both layers as you learn.
 
 - Docker Desktop
 - Python 3.9 or newer for the Replicable launcher
-- An OpenAI or Anthropic API key, supplied through your environment or the
-  launcher's hidden prompt
+- For OpenAI: a ChatGPT account eligible for plan usage, or an OpenAI API key
+- For Anthropic: an Anthropic API key
 - A LangSmith account with browser login (OAuth) or an API key, and access
   to a tracing destination
 - The official LangSmith CLI (v0.2.30 or newer) for browser login, declared
@@ -39,16 +39,25 @@ replicable labs start deep-agents-langgraph-101
 The launcher prompts for:
 
 - `openai` or `anthropic`
-- the model name
-- the provider API key when it is not already available
+- for OpenAI, authentication by `browser` (ChatGPT sign-in) or `api-key`
+- the model name (browser mode lists models available to the signed-in account)
+- the provider API key when using API-key authentication and no key is available
 - LangSmith sign-in (`browser` or `api-key`) when no saved login is available
 
-Choose `browser` to open LangSmith sign-in. An existing login is reused.
-The provider API key is required for model calls. For OpenAI, create a key at
-[OpenAI API keys](https://platform.openai.com/api-keys) and paste it at the
-hidden `OPENAI_API_KEY` prompt. Pressing Enter without a key stops startup.
-LangSmith browser sign-in authenticates tracing; this lab does not connect
-OpenAI or Anthropic browser sessions to model calls.
+For OpenAI, choose `browser` to use **Continue with ChatGPT**. The launcher
+opens the browser and asks you to allow ChatGPT plan usage. It verifies the
+returned identity, saves this lab's own registration and session under the
+ignored `.data/openai/` directory, and lists the account's available models.
+The session directory is mounted into Docker so expired tokens can refresh.
+No OpenAI API key is needed in this mode. Account eligibility, consent, and
+plan usage limits still apply.
+
+Choose `api-key` to enter a provider API key through a hidden prompt. Existing
+keys in your environment or lab settings select API-key mode automatically.
+A blank key stops startup in that mode. Anthropic uses API-key mode.
+
+LangSmith has its own separate sign-in prompt. Its browser login authorizes
+tracing; OpenAI browser login authorizes model calls.
 
 It saves local settings to this exercise's ignored `.env` file, builds the
 Docker image, and opens an interactive chat. Type `exit` to stop.
@@ -57,7 +66,38 @@ files that previously disabled it. The app enables tracing automatically too;
 there is no need to set `LANGSMITH_TRACING` manually. Complete LangSmith
 sign-in before the container starts.
 
-## Existing or organization-managed credentials
+## Choose or switch OpenAI authentication
+
+The launcher remembers the selected authentication mode. You can override it
+for the next launch:
+
+```bash
+replicable labs start deep-agents-langgraph-101 --auth browser
+replicable labs start deep-agents-langgraph-101 --auth api-key
+```
+
+Browser mode always uses the lab's ChatGPT session, even if an API key is also
+present. It does not read Codex credentials or Replicable's existing connections.
+Returning sign-in reuses this lab's issued client ID and stable host ID.
+Tokens are stored in a file readable only by its owner and never in `.env` or
+the image. To reconnect after a revoked session, run:
+
+```bash
+replicable labs start deep-agents-langgraph-101 --auth browser --login
+```
+
+The lab retains its registration when you reconnect. You can also set
+`OPENAI_AUTH_MODE=browser` or `api-key` in your shell.
+
+This uses Replicable's Improve connection as the reference: authorization
+code with PKCE, OIDC identity verification, consent for ChatGPT plan usage,
+rotating refresh tokens, and the public Responses API. Browser requests always
+stream with `store=false`; incomplete or interrupted streams raise an error.
+There is no automatic switch to API-key billing if browser authentication fails.
+See the official [Sign in with ChatGPT guide](https://developers.openai.com/siwc/token-sharing-open-source/sign-in)
+and [models and inference contract](https://developers.openai.com/siwc/token-sharing-open-source/models-and-inference).
+
+## Existing API keys
 
 Set the provider variables before starting if you already have a credential
 connection configured:
@@ -69,9 +109,8 @@ export OPENAI_API_KEY="$YOUR_EXISTING_CREDENTIAL"
 ```
 
 For Anthropic, use `ANTHROPIC_API_KEY` instead. The launcher does not print
-existing credentials or overwrite them. For model providers, this lab uses
-credentials supplied through the environment or hidden prompt. LangSmith
-browser login is configured separately below.
+existing keys or overwrite them. OpenAI browser sign-in is described above;
+LangSmith browser login is configured separately below.
 
 ## Required LangSmith setup
 

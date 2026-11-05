@@ -39,8 +39,8 @@ which replicable
 `which replicable` should point into `.venv/bin/replicable`, not a global
 `~/.local/bin/replicable` installation.
 
-The launcher prompts for an OpenAI or Anthropic provider, model, and provider
-API key if needed. It also offers LangSmith browser sign-in or hidden API-key
+The launcher prompts for an OpenAI or Anthropic provider and a model. OpenAI
+supports browser sign-in with ChatGPT or an API key; Anthropic uses an API key. It also offers LangSmith browser sign-in or hidden API-key
 input when no saved login is available, and enables tracing automatically. It writes
 the answer to the lab's ignored `.env` file, builds the container, and opens an
 interactive local chat.

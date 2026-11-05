@@ -8,6 +8,7 @@ import shutil
 import subprocess
 from pathlib import Path
 
+from .openai_oauth import ChatGPTSession, SignInError
 
 ROOT = Path(__file__).resolve().parents[2]
 LABS_ROOT = ROOT / "src" / "replicable" / "labs"
@@ -27,6 +28,8 @@ def _load_env(path: Path) -> dict[str, str]:
 
 
 def _write_env(path: Path, values: dict[str, str]) -> None:
+    path.touch(mode=0o600, exist_ok=True)
+    path.chmod(0o600)
     path.write_text("".join(f"{key}={value}\n" for key, value in values.items()))
 
 
@@ -72,7 +75,7 @@ def _login_langsmith(values: dict[str, str], *, brewfile: Path) -> None:
         raise SystemExit("Choose browser or api-key for LangSmith sign-in.")
 
 
-def _prompt_for_config(env_path: Path, *, require_langsmith: bool = False) -> None:
+def _prompt_for_config(env_path: Path, *, require_langsmith: bool = False, auth_mode=None, reconnect=False) -> None:
     values = _load_env(env_path)
     provider = values.get("MODEL_PROVIDER") or os.getenv("MODEL_PROVIDER")
     if provider not in {"openai", "anthropic"}:
@@ -82,13 +85,41 @@ def _prompt_for_config(env_path: Path, *, require_langsmith: bool = False) -> No
         raise SystemExit("Provider must be openai or anthropic.")
 
     values["MODEL_PROVIDER"] = provider
-    default_model = "gpt-4.1-mini" if provider == "openai" else "claude-3-5-haiku-latest"
-    model = values.get("MODEL_NAME") or os.getenv("MODEL_NAME")
-    values["MODEL_NAME"] = model or input(f"Model ({default_model}): ").strip() or default_model
-
+    if provider != "openai" and auth_mode == "browser":
+        raise SystemExit("Browser sign-in is available for OpenAI. Select openai or use api-key for Anthropic.")
     key_name = "OPENAI_API_KEY" if provider == "openai" else "ANTHROPIC_API_KEY"
     existing = values.get(key_name, "").strip() or os.getenv(key_name, "").strip()
-    if not existing:
+    mode = "api-key"
+    if provider == "openai":
+        mode = auth_mode or os.getenv("OPENAI_AUTH_MODE") or values.get("OPENAI_AUTH_MODE")
+        if not mode:
+            mode = "api-key" if existing else input("OpenAI authentication [browser/api-key] (browser): ").strip().lower() or "browser"
+        if mode not in {"browser", "api-key"}:
+            raise SystemExit("Choose browser or api-key for OpenAI authentication.")
+        values["OPENAI_AUTH_MODE"] = mode
+
+    if mode == "browser":
+        session = ChatGPTSession(env_path.parent / ".data" / "openai" / "session.json")
+        try:
+            if reconnect or not session.connected():
+                session.sign_in()
+            else:
+                print("Using your saved ChatGPT login.")
+            models = session.models()
+        except SignInError as error:
+            raise SystemExit(str(error)) from None
+        slugs = [item["slug"] for item in models]
+        model = os.getenv("MODEL_NAME") or values.get("MODEL_NAME")
+        if model not in slugs:
+            print("Models available to your ChatGPT account:")
+            for index, item in enumerate(models, 1):
+                print(f"  {index}. {item['display_name']} ({item['slug']})")
+            answer = input("Model number or name (1): ").strip() or "1"
+            model = slugs[int(answer) - 1] if answer.isdigit() and 1 <= int(answer) <= len(slugs) else answer
+            if model not in slugs:
+                raise SystemExit("Choose a model from your ChatGPT account's list.")
+        values["MODEL_NAME"] = model
+    elif not existing:
         print(f"This lab needs a {provider} API key for model calls. Your LangSmith login is separate.")
         if provider == "openai":
             print("Create an OpenAI API key at https://platform.openai.com/api-keys.")
@@ -99,6 +130,11 @@ def _prompt_for_config(env_path: Path, *, require_langsmith: bool = False) -> No
     elif not values.get(key_name, "").strip():
         # Keep shell-provided keys out of .env, and do not mask them with blanks.
         values.pop(key_name, None)
+
+    if mode == "api-key":
+        default_model = "gpt-4.1-mini" if provider == "openai" else "claude-3-5-haiku-latest"
+        model = values.get("MODEL_NAME") or os.getenv("MODEL_NAME")
+        values["MODEL_NAME"] = model or input(f"Model ({default_model}): ").strip() or default_model
 
     if require_langsmith:
         values["LANGSMITH_TRACING"] = "true"
@@ -114,7 +150,7 @@ def _prompt_for_config(env_path: Path, *, require_langsmith: bool = False) -> No
     print(f"Saved local lab configuration to {env_path}. It is ignored by git.")
 
 
-def start_lab(uid: str) -> int:
+def start_lab(uid: str, *, auth_mode=None, reconnect=False) -> int:
     lab_dir = LABS_ROOT / uid
     compose_file = lab_dir / "docker-compose.yml"
     if not compose_file.exists():
@@ -125,10 +161,15 @@ def start_lab(uid: str) -> int:
         raise SystemExit("Docker is required. Install Docker Desktop and try again.")
 
     env_path = lab_dir / ".env"
-    _prompt_for_config(env_path, require_langsmith=uid == "deep-agents-langgraph-101")
+    _prompt_for_config(env_path, require_langsmith=uid == "deep-agents-langgraph-101", auth_mode=auth_mode, reconnect=reconnect)
     command = ["docker", "compose", "-f", str(compose_file), "run", "--build", "--rm"]
     process_env = os.environ.copy()
     process_env.update(_load_env(env_path))
+    if process_env.get("MODEL_PROVIDER") == "openai" and process_env.get("OPENAI_AUTH_MODE") == "browser":
+        auth_dir = (lab_dir / ".data" / "openai").resolve()
+        command.extend(["--volume", f"{auth_dir}:/run/openai-auth"])
+        # Browser mode always uses its own session, even when a shell key exists.
+        process_env["OPENAI_API_KEY"] = ""
     profile = _langsmith_profile(process_env) if uid == "deep-agents-langgraph-101" else None
     if profile is not None:
         # Mount the directory so atomic OAuth token refreshes can be persisted.
@@ -145,7 +186,9 @@ def main() -> None:
     labs_subparsers = labs.add_subparsers(dest="labs_command", required=True)
     start = labs_subparsers.add_parser("start", help="start a lab locally")
     start.add_argument("demo_uid")
+    start.add_argument("--auth", choices=("browser", "api-key"), help="choose model authentication (browser uses ChatGPT)")
+    start.add_argument("--login", action="store_true", help="sign in with ChatGPT again while retaining this lab's registration")
     args = parser.parse_args()
     if args.command == "labs" and args.labs_command == "start":
-        raise SystemExit(start_lab(args.demo_uid))
+        raise SystemExit(start_lab(args.demo_uid, auth_mode=args.auth, reconnect=args.login))
 

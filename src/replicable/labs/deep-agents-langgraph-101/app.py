@@ -9,6 +9,7 @@ from deepagents import create_deep_agent
 from langchain.chat_models import init_chat_model
 from langchain_core.tools import tool
 from langgraph.graph import END, START, StateGraph
+from openai_oauth import ChatGPTSession
 
 
 class LabState(TypedDict, total=False):
@@ -35,6 +36,10 @@ def require_model_credentials() -> None:
     provider = os.environ.get("MODEL_PROVIDER", "openai")
     if provider not in {"openai", "anthropic"}:
         raise SystemExit("Choose openai or anthropic as the model provider.")
+    if provider == "openai" and os.environ.get("OPENAI_AUTH_MODE") == "browser":
+        if not ChatGPTSession(Path(os.environ.get("OPENAI_OAUTH_SESSION", "/run/openai-auth/session.json"))).connected():
+            raise SystemExit("Sign in with ChatGPT through the lab launcher before starting browser mode.")
+        return
     key_name = "OPENAI_API_KEY" if provider == "openai" else "ANTHROPIC_API_KEY"
     if not os.environ.get(key_name, "").strip():
         raise SystemExit(
@@ -48,6 +53,18 @@ def model_from_environment():
     require_model_credentials()
     provider = os.environ.get("MODEL_PROVIDER", "openai")
     model_name = os.environ.get("MODEL_NAME")
+    if provider == "openai" and os.environ.get("OPENAI_AUTH_MODE") == "browser":
+        from chatgpt_model import ChatGPTChatModel
+        session = ChatGPTSession(Path(os.environ.get("OPENAI_OAUTH_SESSION", "/run/openai-auth/session.json")))
+        if not model_name:
+            raise SystemExit("Choose an available ChatGPT model through the lab launcher.")
+        return ChatGPTChatModel(
+            model=model_name, api_key=session.access_token,
+            base_url="https://api.openai.com/v1", use_responses_api=True,
+            streaming=True, store=False, use_previous_response_id=False,
+            include=["reasoning.encrypted_content"], output_version="responses/v1",
+            temperature=None, max_retries=0,
+        )
     if not model_name:
         model_name = "gpt-4.1-mini" if provider == "openai" else "claude-3-5-haiku-latest"
     return init_chat_model(model_name, model_provider=provider, temperature=0)

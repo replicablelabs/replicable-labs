@@ -4,10 +4,11 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
 WORKDIR /app
-COPY requirements.txt .
+ARG LAB_DIR=src/replicable/labs/deep-agents-langgraph-101
+COPY ${LAB_DIR}/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-COPY app.py .
-COPY notes ./notes
+COPY ${LAB_DIR}/app.py ${LAB_DIR}/chatgpt_model.py src/replicable/openai_oauth.py ./
+COPY ${LAB_DIR}/notes ./notes
 
 CMD ["python", "app.py"]
 

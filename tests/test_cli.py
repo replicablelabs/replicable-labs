@@ -24,6 +24,7 @@ class RequiredLangSmithTests(unittest.TestCase):
             "MODEL_PROVIDER": "openai",
             "MODEL_NAME": "test-model",
             "OPENAI_API_KEY": "test-provider-key",
+            "OPENAI_AUTH_MODE": "api-key",
             "LANGSMITH_CONFIG_FILE": str(self.lab / "login" / "config.json"),
         }, clear=True))
         self.contexts.enter_context(patch.object(cli, "LABS_ROOT", self.lab.parent))
@@ -195,6 +196,61 @@ class RequiredLangSmithTests(unittest.TestCase):
             cli.start_lab(self.lab.name)
         self.secret.assert_called_once_with("ANTHROPIC_API_KEY (hidden): ")
         self.process.assert_not_called()
+
+
+    def test_chatgpt_browser_mode_mounts_its_session_without_a_model_api_key(self):
+        os.environ.update({"OPENAI_AUTH_MODE": "browser", "LANGSMITH_API_KEY": "test-tracing-key"})
+        self.prompt.return_value = "1"
+        with patch.object(cli, "ChatGPTSession") as session:
+            session.return_value.connected.return_value = True
+            session.return_value.models.return_value = [{"slug": "chatgpt-model", "display_name": "ChatGPT Model"}]
+            cli.start_lab(self.lab.name)
+            session.return_value.sign_in.assert_not_called()
+        self.secret.assert_not_called()
+        environment = self.process.call_args.kwargs["env"]
+        self.assertEqual(environment["OPENAI_API_KEY"], "")
+        self.assertEqual(environment["OPENAI_AUTH_MODE"], "browser")
+        self.assertEqual(environment["MODEL_NAME"], "chatgpt-model")
+        self.assertIn(str((self.lab / ".data" / "openai").resolve()) + ":/run/openai-auth", self.process.call_args.args[0])
+
+    def test_chatgpt_browser_mode_opens_sign_in_when_disconnected(self):
+        os.environ.update({"OPENAI_AUTH_MODE": "browser", "LANGSMITH_API_KEY": "test-tracing-key"})
+        os.environ.pop("OPENAI_API_KEY")
+        self.prompt.return_value = "1"
+        with patch.object(cli, "ChatGPTSession") as session:
+            session.return_value.connected.return_value = False
+            session.return_value.models.return_value = [{"slug": "chatgpt-model", "display_name": "ChatGPT Model"}]
+            cli.start_lab(self.lab.name)
+            session.return_value.sign_in.assert_called_once()
+        self.secret.assert_not_called()
+
+    def test_browser_authentication_failure_stops_before_docker(self):
+        os.environ["OPENAI_AUTH_MODE"] = "browser"
+        with patch.object(cli, "ChatGPTSession") as session:
+            session.return_value.connected.return_value = False
+            session.return_value.sign_in.side_effect = cli.SignInError("Plan usage was declined")
+            with self.assertRaisesRegex(SystemExit, "Plan usage was declined"):
+                cli.start_lab(self.lab.name)
+        self.process.assert_not_called()
+
+
+    def test_auth_flag_overrides_saved_api_key_mode(self):
+        os.environ["LANGSMITH_API_KEY"] = "test-tracing-key"
+        self.prompt.return_value = "1"
+        with patch.object(cli, "ChatGPTSession") as session:
+            session.return_value.connected.return_value = True
+            session.return_value.models.return_value = [{"slug": "chatgpt-model", "display_name": "ChatGPT Model"}]
+            cli.start_lab(self.lab.name, auth_mode="browser")
+        self.assertEqual(self.process.call_args.kwargs["env"]["OPENAI_AUTH_MODE"], "browser")
+
+    def test_login_flag_reauthorizes_existing_chatgpt_session(self):
+        os.environ["LANGSMITH_API_KEY"] = "test-tracing-key"
+        self.prompt.return_value = "1"
+        with patch.object(cli, "ChatGPTSession") as session:
+            session.return_value.connected.return_value = True
+            session.return_value.models.return_value = [{"slug": "chatgpt-model", "display_name": "ChatGPT Model"}]
+            cli.start_lab(self.lab.name, auth_mode="browser", reconnect=True)
+            session.return_value.sign_in.assert_called_once()
 
 
 if __name__ == "__main__":

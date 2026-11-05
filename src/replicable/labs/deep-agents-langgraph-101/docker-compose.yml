@@ -1,11 +1,14 @@
 services:
   demo:
     build:
-      context: .
+      context: ../../../..
+      dockerfile: src/replicable/labs/deep-agents-langgraph-101/Dockerfile
     environment:
       MODEL_PROVIDER: ${MODEL_PROVIDER:-openai}
       MODEL_NAME: ${MODEL_NAME:-gpt-4.1-mini}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_AUTH_MODE: ${OPENAI_AUTH_MODE:-api-key}
+      OPENAI_OAUTH_SESSION: /run/openai-auth/session.json
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       LANGSMITH_TRACING: ${LANGSMITH_TRACING:-true}
       LANGSMITH_API_KEY: ${LANGSMITH_API_KEY:-}

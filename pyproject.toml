@@ -7,7 +7,7 @@ name = "replicable-labs"
 version = "0.1.0"
 description = "Runnable Replicable tech labs"
 requires-python = ">=3.9"
-dependencies = []
+dependencies = ["python-jose[cryptography]>=3.4,<4", "filelock>=3.16,<4"]
 
 [project.scripts]
 replicable = "replicable.cli:main"

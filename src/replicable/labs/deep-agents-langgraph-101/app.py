@@ -117,7 +117,8 @@ def configure_langsmith() -> None:
     os.environ["LANGSMITH_TRACING"] = "true"
     # Empty Compose entries must not override endpoint/workspace/profile values
     # loaded by the SDK from a browser-login profile.
-    for key in ("LANGSMITH_ENDPOINT", "LANGSMITH_WORKSPACE_ID", "LANGSMITH_PROFILE", "LANGSMITH_API_KEY"):
+    for key in ("LANGSMITH_ENDPOINT", "LANGSMITH_WORKSPACE_ID", "LANGSMITH_PROFILE", "LANGSMITH_API_KEY",
+                "LANGSMITH_AGENT_ID", "LANGSMITH_AGENT_ENVIRONMENT"):
         if not os.environ.get(key, "").strip():
             os.environ.pop(key, None)
     if not os.environ.get("LANGSMITH_API_KEY"):
@@ -133,11 +134,14 @@ def configure_langsmith() -> None:
         if not authenticated:
             raise SystemExit("Sign in to LangSmith through the launcher: replicable labs start deep-agents-langgraph-101. It will offer browser sign-in and mount your login into the container.")
     if os.environ.get("LANGSMITH_AGENT_ID", "").strip():
+        os.environ.setdefault("LANGSMITH_AGENT_ENVIRONMENT", "local")
         # Agent addressing must not be combined with legacy project settings.
         for key in ("LANGSMITH_PROJECT", "LANGCHAIN_PROJECT", "LANGCHAIN_SESSION"):
             os.environ.pop(key, None)
-    elif not os.environ.get("LANGSMITH_PROJECT", "").strip():
-        os.environ["LANGSMITH_PROJECT"] = "replicable-deep-agents-langgraph-101"
+    else:
+        os.environ.pop("LANGSMITH_AGENT_ENVIRONMENT", None)
+        if not os.environ.get("LANGSMITH_PROJECT", "").strip():
+            os.environ["LANGSMITH_PROJECT"] = "replicable-deep-agents-langgraph-101"
 
 
 def main() -> None:

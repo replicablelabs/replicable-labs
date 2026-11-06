@@ -1,5 +1,6 @@
 """Run inside the lab image with PYTHONPATH=/app; no external requests."""
 import json
+import os
 import unittest
 from unittest.mock import patch
 
@@ -40,6 +41,21 @@ def events(text="Hello", *, function=False, terminal="completed"):
 
 
 class ModelIntegrationTests(unittest.TestCase):
+    def test_project_tracing_does_not_inherit_an_incomplete_agent_address(self):
+        with patch.dict(os.environ, {"LANGSMITH_API_KEY": "test-key", "LANGSMITH_AGENT_ID": "",
+                                    "LANGSMITH_AGENT_ENVIRONMENT": "local", "LANGSMITH_PROJECT": "test-project"}, clear=True):
+            app.configure_langsmith()
+            self.assertNotIn("LANGSMITH_AGENT_ID", os.environ)
+            self.assertNotIn("LANGSMITH_AGENT_ENVIRONMENT", os.environ)
+            self.assertEqual(os.environ["LANGSMITH_PROJECT"], "test-project")
+
+    def test_agent_tracing_defaults_environment_only_when_an_agent_is_set(self):
+        with patch.dict(os.environ, {"LANGSMITH_API_KEY": "test-key", "LANGSMITH_AGENT_ID": "test-agent",
+                                    "LANGSMITH_AGENT_ENVIRONMENT": "", "LANGSMITH_PROJECT": "legacy-project"}, clear=True):
+            app.configure_langsmith()
+            self.assertEqual(os.environ["LANGSMITH_AGENT_ENVIRONMENT"], "local")
+            self.assertNotIn("LANGSMITH_PROJECT", os.environ)
+
     def model(self, handler):
         client = httpx.Client(transport=httpx.MockTransport(handler))
         self.addCleanup(client.close)

@@ -79,10 +79,8 @@ def run_deep_agent(state: LabState) -> LabState:
         model=model_from_environment(),
         tools=[explain_concept],
         system_prompt=(
-            "You are a patient teacher. Help the learner understand the difference "
-            "between LangGraph workflow control, the Deep Agents harness, and "
-            "LangSmith observability. Use the "
-            "local notes tool when useful. Always name which layer you are describing."
+            "You are a demo about LangGraph workflow control, the Deep Agents harness, and "
+            "LangSmith observability"
         ),
     )
     result = agent.invoke(

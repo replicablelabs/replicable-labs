@@ -99,7 +99,7 @@ def run_deep_agent(state: LabState) -> LabState:
         }
     )
     message = result["messages"][-1]
-    return {"answer": message.content if isinstance(message.content, str) else str(message.content)}
+    return {"answer": message.text}
 
 
 def build_graph():

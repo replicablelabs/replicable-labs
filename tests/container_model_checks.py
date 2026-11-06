@@ -4,7 +4,7 @@ import unittest
 from unittest.mock import patch
 
 import httpx
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage, SystemMessage
 
 import app
 from chatgpt_model import ChatGPTChatModel
@@ -82,9 +82,38 @@ class ModelIntegrationTests(unittest.TestCase):
         model = self.model(handler)
         with patch.object(app, "model_from_environment", return_value=model), patch.object(app, "read_notes", return_value="LangGraph controls the workflow."):
             result = app.build_graph().invoke({"question": "Use explain_concept to explain LangGraph."})
-        self.assertIn("Hello", str(result["answer"]))
+        self.assertEqual(result["answer"], "Hello")
         self.assertEqual(len(requests), 2)
+        for body in requests:
+            self.assertNotIn("system", [item.get("role") for item in body["input"]])
+            self.assertIn("developer", [item.get("role") for item in body["input"]])
+            self.assertTrue(all(tool["type"] == "namespace" for tool in body["tools"]))
         self.assertTrue(any(item.get("type") == "function_call_output" for item in requests[1]["input"]))
+
+    def test_system_messages_and_tool_choice_follow_browser_route_contract(self):
+        requests = []
+        def handler(request):
+            requests.append(json.loads(request.content))
+            return httpx.Response(200, headers={"content-type": "text/event-stream"}, content=events())
+        model = self.model(handler).bind_tools([app.explain_concept], tool_choice="explain_concept")
+        model.invoke([SystemMessage(content="Teach the learner."), HumanMessage(content="Hello")])
+        self.assertEqual(requests[0]["input"][0]["role"], "developer")
+        namespace = requests[0]["tools"][0]
+        self.assertEqual(namespace["type"], "namespace")
+        self.assertEqual(namespace["tools"][0]["name"], "explain_concept")
+        self.assertEqual(requests[0]["tool_choice"]["namespace"], namespace["name"])
+
+    def test_unsupported_preview_fields_are_removed(self):
+        model = self.model(lambda request: None)
+        body = model._get_request_payload(
+            [SystemMessage(content="Teach."), HumanMessage(content="Hello")],
+            temperature=0.5, max_output_tokens=20, metadata={"lesson": "one"},
+            previous_response_id="resp_old", stop=["STOP"], top_p=0.8, store=True,
+        )
+        for key in ("temperature", "max_output_tokens", "metadata", "previous_response_id", "stop", "top_p"):
+            self.assertNotIn(key, body)
+        self.assertIs(body["store"], False)
+        self.assertIs(body["stream"], True)
 
 
 class AsyncModelIntegrationTests(unittest.IsolatedAsyncioTestCase):

@@ -5,18 +5,6 @@ Runnable technical demos for learning by doing.
 Each exercise keeps its own installation and usage instructions in a README
 inside its exercise directory.
 
-## Claude Code superuser lab
-
-[`agentic-coding-superuser`](src/replicable/labs/agentic-coding-superuser/README.md)
-runs Claude Code on your machine (no Docker) with the
-[`replicable-harness`](https://github.com/replicablelabs/replicable-claude)
-plugin at a pinned release: graphify's code graph, edit → verify hooks, a test
-gate, a project wiki, subagents and agentic loops, on this repository:
-
-```bash
-replicable labs start agentic-coding-superuser
-```
-
 ## Run the first lab
 
 See [`deep-agents-langgraph-101/README.md`](src/replicable/labs/deep-agents-langgraph-101/README.md)

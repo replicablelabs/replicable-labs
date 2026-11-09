@@ -150,56 +150,9 @@ def _prompt_for_config(env_path: Path, *, require_langsmith: bool = False, auth_
     print(f"Saved local lab configuration to {env_path}. It is ignored by git.")
 
 
-PLUGIN_CACHE = ROOT / ".data" / "plugins"
-
-
-def _is_plugin(path: Path) -> bool:
-    return (path / ".claude-plugin" / "plugin.json").exists()
-
-
-def _plugin_dir(spec: dict) -> Path:
-    """The plugin a host lab loads: a local checkout from REPLICABLE_HARNESS_DIR, or a clone at the pinned tag."""
-    override = os.environ.get("REPLICABLE_HARNESS_DIR")
-    if override:
-        path = Path(override).expanduser().resolve()
-        if not _is_plugin(path):
-            raise SystemExit(f"REPLICABLE_HARNESS_DIR={override} is not a Claude Code plugin (no .claude-plugin/plugin.json).")
-        return path
-    target = PLUGIN_CACHE / f"{spec['name']}-{spec['ref']}"
-    if not _is_plugin(target):
-        if shutil.which("git") is None:
-            raise SystemExit("This lab needs git to fetch its Claude Code plugin.")
-        target.parent.mkdir(parents=True, exist_ok=True)
-        print(f"Fetching {spec['name']} {spec['ref']} into {target.relative_to(ROOT)} ...")
-        result = subprocess.run(["git", "-c", "advice.detachedHead=false", "clone", "--quiet", "--depth", "1",
-                                 "--branch", spec["ref"],
-                                 spec["repository"], str(target)])
-        if result.returncode != 0 or not _is_plugin(target):
-            raise SystemExit(f"Could not fetch {spec['repository']} at {spec['ref']}.")
-    return target
-
-
-def start_host_lab(lab_dir: Path, extra_args=()) -> int:
-    """Run a lab that loads a Claude Code plugin, directly on this machine (no Docker)."""
-    spec = json.loads((lab_dir / "lab.json").read_text())["plugin"]
-    if shutil.which("claude") is None:
-        raise SystemExit("This lab needs the Claude Code CLI. Install it from https://docs.claude.com/claude-code and run `claude` once to sign in.")
-    plugin = _plugin_dir(spec)
-    return subprocess.call(["claude", "--plugin-dir", str(plugin), *extra_args], cwd=ROOT)
-
-
-def _is_host_lab(lab_dir: Path) -> bool:
-    try:
-        return json.loads((lab_dir / "lab.json").read_text()).get("kind") == "claude-code-plugin"
-    except (OSError, ValueError, AttributeError):
-        return False
-
-
-def start_lab(uid: str, *, auth_mode=None, reconnect=False, extra_args=()) -> int:
+def start_lab(uid: str, *, auth_mode=None, reconnect=False) -> int:
     lab_dir = LABS_ROOT / uid
     compose_file = lab_dir / "docker-compose.yml"
-    if not compose_file.exists() and _is_host_lab(lab_dir):
-        return start_host_lab(lab_dir, extra_args)
     if not compose_file.exists():
         known = sorted(path.name for path in LABS_ROOT.iterdir() if path.is_dir()) if LABS_ROOT.exists() else []
         suffix = f" Available labs: {', '.join(known)}" if known else ""
@@ -235,9 +188,7 @@ def main() -> None:
     start.add_argument("demo_uid")
     start.add_argument("--auth", choices=("browser", "api-key"), help="choose model authentication (browser uses ChatGPT)")
     start.add_argument("--login", action="store_true", help="sign in with ChatGPT again while retaining this lab's registration")
-    start.add_argument("claude_args", nargs=argparse.REMAINDER, help="for Claude Code labs: extra arguments after -- are passed to claude")
     args = parser.parse_args()
     if args.command == "labs" and args.labs_command == "start":
-        extra = [a for a in args.claude_args if a != "--"] if args.claude_args else []
-        raise SystemExit(start_lab(args.demo_uid, auth_mode=args.auth, reconnect=args.login, extra_args=extra))
+        raise SystemExit(start_lab(args.demo_uid, auth_mode=args.auth, reconnect=args.login))
 

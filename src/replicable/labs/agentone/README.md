@@ -5,11 +5,18 @@ GraphRAG → offline/online evals (LangSmith). Everything runs against one tiny 
 graph, `data/corpus.json`) with multi-hop questions, so each layer solves the *same* problem.
 
 ```bash
-cd src/replicable/labs/agentone
+cd src/replicable/labs/agentone       # from the repo root
 uv sync
-uv run pytest -q                      # no API key needed (fake client)
-export ANTHROPIC_API_KEY=...          # for live runs
-uv run python -m agentone.loop "Who leads the team that owns the Schema Registry?"
+uv run pytest -q                      # no API key needed (fake clients)
+
+# keys: plain env vars (nothing loads .env yet); set only what you run
+export OPENAI_API_KEY=sk-...
+export ANTHROPIC_API_KEY=sk-ant-...
+
+uv run python -m agentone.loop_openai "Who leads the team that owns the Schema Registry?"
+uv run python -m agentone.loop        "Who leads the team that owns the Schema Registry?"   # Anthropic
+uv run python -m agentone.harnesses                   # all three harnesses side by side
+uv run python -m agentone.evals.offline               # offline eval (uses the Anthropic loop)
 ```
 
 Proxy / Hugging Face: the Anthropic SDK reads `ANTHROPIC_BASE_URL`, so any Anthropic-compatible proxy works

@@ -17,11 +17,25 @@ with zero code change. For HF/OpenAI-style endpoints, swap the client in `loop.p
 only the tool-call message format differs: `tool_calls` + `role: "tool"` instead of `tool_use`/`tool_result` blocks).
 LangSmith: `LANGSMITH_TRACING=true LANGSMITH_API_KEY=... LANGSMITH_PROJECT=agentone`.
 
+## Three harnesses, same questions
+
+```bash
+export OPENAI_API_KEY=... ANTHROPIC_API_KEY=...
+uv run python -m agentone.harnesses                       # all three
+uv run python -m agentone.harnesses openai -- "Which team builds the Ingestion Pipeline?"
+DEEPAGENTS_MODEL=openai:gpt-4.1 uv run python -m agentone.harnesses deepagents   # deepagents on OpenAI
+```
+`anthropic` = `loop.py`, `openai` = `loop_openai.py` (you own the loop in both; compare the wire formats),
+`deepagents` = framework owns the loop. Prints answer / steps / tool calls / seconds per harness.
+Only one key is needed per harness you run; missing-key errors are reported per row, not fatal.
+
 ## Map
 
 | File | Concept |
 |---|---|
 | `src/agentone/loop.py` | **The interview file.** Raw Messages-API agent loop |
+| `src/agentone/loop_openai.py` | Same loop on OpenAI Chat Completions (`tool_calls`, `role: tool`) |
+| `src/agentone/harnesses.py` | Side-by-side runner: anthropic / openai / deepagents |
 | `src/agentone/tools.py` | Tool schema + dispatch, errors returned to the model |
 | `src/agentone/graphrag.py` | Triples → graph, entity linking, k-hop local search, communities |
 | `src/agentone/lg_agent.py` | LangGraph: state, nodes, conditional edges, checkpointer |

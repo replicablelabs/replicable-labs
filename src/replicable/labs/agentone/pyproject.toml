@@ -13,6 +13,8 @@ dependencies = [
   "langsmith",
   "networkx",
   "pytest",
+  "openai>=3.52.0",
+  "langchain-openai>=1.8.0",
 ]
 
 [build-system]

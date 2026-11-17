@@ -5,6 +5,8 @@ import hashlib, math, re
 from typing import Protocol
 
 class Embedder(Protocol):
+    name: str
+    dim: int
     def embed(self, texts: list[str]) -> list[list[float]]: ...
 
 _STOP = {"the", "a", "an", "of", "to", "in", "is", "are", "and", "or", "what", "how", "does", "do", "it", "for", "that", "with", "as", "on", "by", "be"}
@@ -14,6 +16,7 @@ def tokens(t: str) -> list[str]:
 
 class HashEmbedder:
     """Hashed bag-of-words. Lexical only (no semantics) -- fine for plumbing, weak for real retrieval."""
+    name = "hash"
     def __init__(self, dim: int = 512): self.dim = dim
     def embed(self, texts):
         out = []
@@ -25,9 +28,11 @@ class HashEmbedder:
         return out
 
 class OpenAIEmbedder:
+    DIMS = {"text-embedding-3-small": 1536, "text-embedding-3-large": 3072}
     def __init__(self, client=None, model: str = "text-embedding-3-small"):
         from openai import OpenAI
         self.client, self.model = client or OpenAI(), model
+        self.name, self.dim = f"openai:{model}", self.DIMS[model]
     def embed(self, texts):
         r = self.client.embeddings.create(model=self.model, input=texts)
         return [d.embedding for d in r.data]

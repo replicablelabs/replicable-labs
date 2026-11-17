@@ -11,7 +11,7 @@ SEED = Path(__file__).resolve().parents[3] / "data" / "seed_cards.json"
 def load_seed(store: CardStore, embedder: Embedder, path: Path = SEED) -> int:
     n = 0
     for c in json.loads(path.read_text())["cards"]:
-        if c["id"] in store.s.cards: continue
+        if store.has(c["id"]): continue
         ingest_card(store, None, embedder, c["question"], c["answer"], card_id=c["id"],
                     triples=[Triple(subject=s, relation=r, object=o) for s, r, o in c["triples"]]); n += 1
     return n

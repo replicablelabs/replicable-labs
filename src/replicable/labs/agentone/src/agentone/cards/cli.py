@@ -7,7 +7,7 @@ from .ingest import ingest_card
 from .session import Session, build_session
 from .store import CardStore
 
-DEFAULT_DB = Path(__file__).resolve().parents[3] / "data" / "cards.local.json"
+DEFAULT_DB = Path(__file__).resolve().parents[3] / "data" / "cards.db"
 
 def repl(session: Session, card, input_fn=input, print_fn=print) -> str:
     if session.mode == "study":
@@ -43,16 +43,16 @@ def main(argv=None):
     for m in ("study", "exercise"): sub.add_parser(m).add_argument("--card")
     for c in ("seed", "list", "graph", "eval"): sub.add_parser(c)
     a = p.parse_args(argv)
-    store, emb = CardStore(a.db), get_embedder(a.embedder)
+    emb = get_embedder(a.embedder); store = CardStore(a.db, emb.name, emb.dim)
 
     if a.cmd == "seed":
         from .seed import load_seed; print(f"loaded {load_seed(store, emb)} cards")
     elif a.cmd == "list":
-        for c in store.s.cards.values():
+        for c in store.cards():
             m = store.mean_score(c.id); print(f"[{c.id}] {c.question}  (mean score: {'-' if m is None else f'{m:.2f}'})")
     elif a.cmd == "graph":
-        g = store.graph(); print(f"{g.number_of_nodes()} entities, {g.number_of_edges()} edges, {len(store.s.cards)} cards")
-        for u, v, d in g.edges(data=True): print(f"  {g.nodes[u]['label']} --{d['relation']}--> {g.nodes[v]['label']}  [{d['card_id']}]")
+        n, e = store.stats(); print(f"{n} entities, {e} edges, {store.count()} cards  ({a.db})")
+        for r in store.edges(): print(f"  {r['subject']} --{r['relation']}--> {r['object']}  [{r['card_id']}]")
     elif a.cmd == "eval":
         from .evals import retrieval_eval
         print("retrieval recall@3:", retrieval_eval(emb))

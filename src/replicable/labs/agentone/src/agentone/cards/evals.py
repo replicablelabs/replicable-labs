@@ -1,5 +1,7 @@
 """Offline evals for the cards app. retrieval_eval needs no LLM/key. router_eval & judge_eval take an LLM."""
 from __future__ import annotations
+import tempfile
+from pathlib import Path
 from .embed import Embedder
 from .models import RouteDecision, Score
 from .retrieve import retrieve
@@ -8,7 +10,11 @@ from .store import CardStore
 
 def retrieval_eval(embedder: Embedder, k: int = 3) -> dict[str, float]:
     """recall@k of the expected card, for vector-only / graph-only / hybrid, on the seed deck."""
-    store = CardStore(); load_seed(store, embedder); qs = retrieval_queries()
+    with tempfile.TemporaryDirectory() as d:
+        store = CardStore(Path(d) / "eval.db", embedder.name, embedder.dim); load_seed(store, embedder); qs = retrieval_queries()
+        return _recall(store, embedder, qs, k)
+
+def _recall(store, embedder, qs, k):
     return {m: round(sum(q["card"] in [c.id for c in retrieve(store, embedder, q["query"], k=k, mode=m).cards] for q in qs) / len(qs), 2)
             for m in ("vector", "graph", "hybrid")}
 

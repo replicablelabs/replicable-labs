@@ -18,7 +18,8 @@ cards exercise                        # picks never-attempted, then weakest card
 cards list; cards graph; cards eval   # eval = retrieval recall@3 (vector vs graph vs hybrid), offline
 # --provider openai   --embedder openai   (Claude has no embeddings API; default embedder is offline `hash`)
 ```
-Cards persist in `data/cards.local.json` (gitignored; override with `--db` / `AGENTONE_DB`).
+Storage is one SQLite file, `data/cards.db` (gitignored; override with `--db` / `AGENTONE_DB`): no server, no Docker, nothing
+held in memory. The file records which embedder built it and refuses a different one (use one `--embedder` per DB).
 
 ## Study vs exercise
 
@@ -40,9 +41,9 @@ intents to `ask`. So exercise mode cannot create cards or leak, whatever the mod
 | `models.py` | **pydantic**: `Card, Triple, CardExtraction, DraftCard, RouteDecision, Score, Attempt` (bounds → invalid judge output = retry) |
 | `llm.py` | `LLM` protocol; Anthropic (forced tool call = schema output) and OpenAI (JSON mode) impls; validate + retry once |
 | `embed.py` | embedders + cosine (`HashEmbedder` offline, `OpenAIEmbedder`) |
-| `store.py` | **vector side**: card→embedding; **graph side**: card→triples; graph derived (nodes = entities, edges carry `card_id` provenance); attempts; scheduler |
+| `store.py` | **SQLite**: `cards`/`attempts` tables; **graph** = `triples` table (edges tagged with `card_id`; k-hop = recursive CTE); **vectors** = `sqlite-vec` `vec0` table (cosine KNN on disk); `meta` pins embedder+dim; scheduler. Prod equivalents: pgvector, Neo4j |
 | `ingest.py` | card → embed + extract triples + persist |
-| `retrieve.py` | vector top-k + graph k-hop around entities named in the query, fused with reciprocal-rank fusion; `exclude` |
+| `retrieve.py` | sqlite-vec KNN + SQL graph k-hop around entities named in the query, fused with reciprocal-rank fusion; `exclude` |
 | `session.py` | **LangGraph** `StateGraph`: route → ask / create_card / score; checkpointer per `thread_id` |
 | `evals.py` | retrieval recall@k (no key), router accuracy, judge accuracy (need an LLM) |
 | `cli.py` | study/exercise REPLs |

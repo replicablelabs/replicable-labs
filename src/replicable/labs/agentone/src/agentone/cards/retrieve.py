@@ -1,10 +1,8 @@
-"""Hybrid retrieval: vector top-k  +  graph neighbourhood of entities named in the query, fused with RRF.
-`exclude` removes cards AND their edges (exercise mode must never retrieve the card being tested)."""
+"""Hybrid retrieval: vector KNN (sqlite-vec) + graph k-hop (recursive CTE) around entities named in the query,
+fused with reciprocal-rank fusion. `exclude` removes cards AND their edges (exercise mode must never retrieve the card being tested)."""
 from __future__ import annotations
-import re
 from collections import Counter
 from dataclasses import dataclass, field
-import networkx as nx
 from .embed import Embedder
 from .models import Card
 from .store import CardStore
@@ -15,20 +13,13 @@ class Retrieval:
     facts: list[str] = field(default_factory=list)
 
 def _graph_side(store: CardStore, query: str, hops: int, exclude) -> tuple[list[str], list[str]]:
-    g = store.graph(exclude)
-    q = query.lower()
-    seeds = [n for n in g.nodes if re.search(rf"(?<!\w){re.escape(n)}(?!\w)", q)]  # entity linking
+    seeds = store.link_entities(query, exclude)
     if not seeds: return [], []
-    und = g.to_undirected(as_view=True)
-    reach: set[str] = set()
-    for s in seeds: reach |= set(nx.single_source_shortest_path_length(und, s, cutoff=hops))
     weight: Counter = Counter(); facts = set()
-    for u, v, d in g.edges(data=True):
-        if u in reach and v in reach:
-            facts.add(f"{g.nodes[u]['label']} --{d['relation']}--> {g.nodes[v]['label']}")
-            weight[d["card_id"]] += 2 if (u in seeds or v in seeds) else 1
-    ranked = [c for c, _ in sorted(weight.items(), key=lambda x: (-x[1], x[0]))]
-    return ranked, sorted(facts)
+    for r in store.neighborhood(seeds, hops, exclude):
+        facts.add(f"{r['subject']} --{r['relation']}--> {r['object']}")
+        weight[r["card_id"]] += 2 if (r["subject_key"] in seeds or r["object_key"] in seeds) else 1
+    return [c for c, _ in sorted(weight.items(), key=lambda x: (-x[1], x[0]))], sorted(facts)
 
 def retrieve(store: CardStore, embedder: Embedder, query: str, k: int = 3, hops: int = 1,
              mode: str = "hybrid", exclude=()) -> Retrieval:

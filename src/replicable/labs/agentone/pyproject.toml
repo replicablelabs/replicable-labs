@@ -17,6 +17,7 @@ dependencies = [
   "langchain-openai>=1.8.0",
   "pydantic>=2.14.3",
   "python-dotenv>=1.2.4",
+  "sqlite-vec>=0.1.9",
 ]
 
 [build-system]

@@ -1,0 +1,23 @@
+[project]
+name = "agentone"
+version = "0.1.0"
+description = "Learning lab: build an agent by hand (raw loop, LangGraph, deepagents, Agent SDK, LangSmith evals, GraphRAG)"
+requires-python = ">=3.11"
+dependencies = [
+  "anthropic",
+  "langgraph",
+  "langchain-anthropic",
+  "langchain-core",
+  "deepagents",
+  "claude-agent-sdk",
+  "langsmith",
+  "networkx",
+  "pytest",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agentone"]

@@ -1,0 +1,29 @@
+{
+  "docs": [
+    {"id": "d1", "text": "Alice Chen leads the Atlas team. Atlas builds the ingestion pipeline."},
+    {"id": "d2", "text": "Bob Rao works on Atlas and wrote the Kafka connector."},
+    {"id": "d3", "text": "The ingestion pipeline depends on Kafka and the Schema Registry."},
+    {"id": "d4", "text": "Carol Diaz leads the Beacon team. Beacon owns the Schema Registry."},
+    {"id": "d5", "text": "Dana Kim reports to Alice Chen and maintains the Kafka connector."},
+    {"id": "d6", "text": "Beacon is on call for Schema Registry outages."}
+  ],
+  "triples": [
+    ["Alice Chen", "leads", "Atlas"],
+    ["Atlas", "builds", "Ingestion Pipeline"],
+    ["Bob Rao", "works_on", "Atlas"],
+    ["Bob Rao", "wrote", "Kafka Connector"],
+    ["Ingestion Pipeline", "depends_on", "Kafka"],
+    ["Ingestion Pipeline", "depends_on", "Schema Registry"],
+    ["Carol Diaz", "leads", "Beacon"],
+    ["Beacon", "owns", "Schema Registry"],
+    ["Dana Kim", "reports_to", "Alice Chen"],
+    ["Dana Kim", "maintains", "Kafka Connector"],
+    ["Kafka Connector", "part_of", "Ingestion Pipeline"]
+  ],
+  "qa": [
+    {"q": "Who leads the team that owns the Schema Registry?", "a": "Carol Diaz", "hops": 2},
+    {"q": "Which team builds the Ingestion Pipeline?", "a": "Atlas", "hops": 1},
+    {"q": "Who maintains the Kafka Connector and who do they report to?", "a": "Dana Kim reports to Alice Chen", "hops": 2},
+    {"q": "Which team is on call if a dependency of the Ingestion Pipeline owned by another team fails?", "a": "Beacon", "hops": 3}
+  ]
+}

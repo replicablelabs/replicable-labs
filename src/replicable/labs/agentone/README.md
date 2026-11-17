@@ -8,7 +8,8 @@ knowledge graph, hybrid retrieval, LLM-judge scoring, offline evals. All local (
 cd src/replicable/labs/agentone       # from the repo root
 uv sync && uv run pytest -q           # 18 tests, no API key (scripted fake LLM + hash embedder)
 
-export ANTHROPIC_API_KEY=sk-ant-...   # or OPENAI_API_KEY with --provider openai (nothing loads .env yet)
+cp .env.example .env                  # then fill in ANTHROPIC_API_KEY / OPENAI_API_KEY / LANGSMITH_API_KEY (gitignored)
+# (exported shell vars override .env; use --provider openai to run on OpenAI)
 alias cards="uv run python -m agentone.cards.cli"
 cards seed                            # 8-card demo deck (pre-extracted triples, no LLM needed)
 cards add "What is X?" "X is ..."     # embeds the card + LLM-extracts triples -> graph

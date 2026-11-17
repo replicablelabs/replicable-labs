@@ -15,6 +15,7 @@ dependencies = [
   "pytest",
   "openai>=3.52.0",
   "langchain-openai>=1.8.0",
+  "pydantic>=2.14.3",
 ]
 
 [build-system]

@@ -1,0 +1,20 @@
+{"cards": [
+ {"id":"c1","question":"What does an agent loop do until it stops?","answer":"It calls the model; while stop_reason is tool_use it runs the requested tools, appends the tool_result blocks as one user message, and calls the model again.","triples":[["agent loop","calls","model"],["agent loop","runs","tool_use block"],["agent loop","appends","tool_result block"],["agent loop","stops_when","stop_reason end_turn"]]},
+ {"id":"c2","question":"Where must tool_result blocks go in the Anthropic Messages API?","answer":"In a single user message right after the assistant message, each with the matching tool_use_id.","triples":[["tool_result block","matches","tool_use block"],["tool_result block","sent_in","user message"],["tool_use block","part_of","assistant message"],["agent loop","appends","tool_result block"]]},
+ {"id":"c3","question":"How does LangGraph remember a conversation across turns?","answer":"A checkpointer saves the graph state per thread_id, so invoking again with the same thread_id resumes that state.","triples":[["LangGraph","uses","checkpointer"],["checkpointer","saves","graph state"],["checkpointer","keyed_by","thread_id"]]},
+ {"id":"c4","question":"What does a conditional edge do in LangGraph?","answer":"It chooses the next node at runtime using a routing function over the graph state.","triples":[["conditional edge","part_of","LangGraph"],["conditional edge","calls","routing function"],["routing function","reads","graph state"]]},
+ {"id":"c5","question":"Why use GraphRAG instead of plain vector RAG for multi-hop questions?","answer":"Relations are explicit edges, so retrieval can follow chains of entities that no single chunk contains.","triples":[["GraphRAG","uses","knowledge graph"],["knowledge graph","stores","entity relations"],["GraphRAG","answers","multi-hop questions"],["vector RAG","retrieves","chunks"]]},
+ {"id":"c6","question":"What is an embedding used for in retrieval?","answer":"It maps text to a vector so semantically similar texts are close together and can be found by cosine similarity.","triples":[["embedding","maps","text to vector"],["vector store","indexes","embedding"],["vector RAG","uses","vector store"]]},
+ {"id":"c7","question":"What is the difference between offline and online evals?","answer":"Offline evals score an agent on a fixed labelled dataset before release; online evals score live traffic without reference answers.","triples":[["offline eval","uses","labelled dataset"],["online eval","scores","live traces"],["LangSmith","supports","offline eval"],["LangSmith","supports","online eval"]]},
+ {"id":"c8","question":"What is the main risk of an LLM judge and how do you reduce it?","answer":"Judge bias and drift; pin the rubric, use temperature 0 and validate the judge against human labels.","triples":[["LLM judge","used_in","offline eval"],["LLM judge","needs","human-labelled validation"],["LLM judge","has_risk","bias"]]}
+],
+"retrieval_eval": [
+ {"query":"how does the loop send tool outputs back to the model","card":"c2"},
+ {"query":"how does LangGraph keep memory between turns","card":"c3"},
+ {"query":"follow chains of entities across documents","card":"c5"},
+ {"query":"score live production traffic without ground truth","card":"c7"},
+ {"query":"cosine similarity of vectors","card":"c6"},
+ {"query":"choose the next node at runtime","card":"c4"},
+ {"query":"can I trust the judge","card":"c8"},
+ {"query":"when does the agent stop calling the model","card":"c1"}
+]}

@@ -1,82 +1,66 @@
 # agentone
 
-Learn to build an agent **by hand** in a few days: raw loop → LangGraph → deepagents → Agent SDK →
-GraphRAG → offline/online evals (LangSmith). Everything runs against one tiny domain (a company knowledge
-graph, `data/corpus.json`) with multi-hop questions, so each layer solves the *same* problem.
+An agent that makes **knowledge cards** (question + answer) and lets you **study** and **exercise** them.
+Built to be re-coded by hand: LangGraph router/session, pydantic contracts, per-card embeddings *and* a
+knowledge graph, hybrid retrieval, LLM-judge scoring, offline evals. All local (no Docker).
 
 ```bash
 cd src/replicable/labs/agentone       # from the repo root
-uv sync
-uv run pytest -q                      # no API key needed (fake clients)
+uv sync && uv run pytest -q           # 18 tests, no API key (scripted fake LLM + hash embedder)
 
-# keys: plain env vars (nothing loads .env yet); set only what you run
-export OPENAI_API_KEY=sk-...
-export ANTHROPIC_API_KEY=sk-ant-...
-
-uv run python -m agentone.loop_openai "Who leads the team that owns the Schema Registry?"
-uv run python -m agentone.loop        "Who leads the team that owns the Schema Registry?"   # Anthropic
-uv run python -m agentone.harnesses                   # all three harnesses side by side
-uv run python -m agentone.evals.offline               # offline eval (uses the Anthropic loop)
+export ANTHROPIC_API_KEY=sk-ant-...   # or OPENAI_API_KEY with --provider openai (nothing loads .env yet)
+alias cards="uv run python -m agentone.cards.cli"
+cards seed                            # 8-card demo deck (pre-extracted triples, no LLM needed)
+cards add "What is X?" "X is ..."     # embeds the card + LLM-extracts triples -> graph
+cards study                           # or: cards study --card c3
+cards exercise                        # picks never-attempted, then weakest cards
+cards list; cards graph; cards eval   # eval = retrieval recall@3 (vector vs graph vs hybrid), offline
+# --provider openai   --embedder openai   (Claude has no embeddings API; default embedder is offline `hash`)
 ```
+Cards persist in `data/cards.local.json` (gitignored; override with `--db` / `AGENTONE_DB`).
 
-Proxy / Hugging Face: the Anthropic SDK reads `ANTHROPIC_BASE_URL`, so any Anthropic-compatible proxy works
-with zero code change. For HF/OpenAI-style endpoints, swap the client in `loop.py` (the loop shape is identical;
-only the tool-call message format differs: `tool_calls` + `role: "tool"` instead of `tool_use`/`tool_result` blocks).
-LangSmith: `LANGSMITH_TRACING=true LANGSMITH_API_KEY=... LANGSMITH_PROJECT=agentone`.
+## Study vs exercise
 
-## Three harnesses, same questions
+| | **Study** | **Exercise** |
+|---|---|---|
+| Learner sees | question **and** answer | question only |
+| Tutor knows the answer | yes | **no** (structurally not in its prompt; current card's vector + graph edges excluded from retrieval; output leak-guard as backup) |
+| Learner can | ask questions; `/card` (or "make that a card") creates a new card, linked `prerequisite_of` the current one, embedded + graph-ingested | ask for hints; `/answer ...` submits the final answer |
+| End of turn | tutor reply | LLM judge → pydantic `Score` (0-1, verdict, feedback) saved as an `Attempt`; answer revealed after |
 
-```bash
-export OPENAI_API_KEY=... ANTHROPIC_API_KEY=...
-uv run python -m agentone.harnesses                       # all three
-uv run python -m agentone.harnesses openai -- "Which team builds the Ingestion Pipeline?"
-DEEPAGENTS_MODEL=openai:gpt-4.1 uv run python -m agentone.harnesses deepagents   # deepagents on OpenAI
-```
-`anthropic` = `loop.py`, `openai` = `loop_openai.py` (you own the loop in both; compare the wire formats),
-`deepagents` = framework owns the loop. Prints answer / steps / tool calls / seconds per harness.
-Only one key is needed per harness you run; missing-key errors are reported per row, not fatal.
+**Router** (`cards/session.py`): `/answer`, `/card` slash-commands route deterministically; otherwise an LLM classifies
+into `ask | create_card | submit_answer` (pydantic `RouteDecision`); then a hard per-mode guard coerces disallowed
+intents to `ask`. So exercise mode cannot create cards or leak, whatever the model says.
 
-## Map
+## Where each concept lives (`src/agentone/cards/`)
 
 | File | Concept |
 |---|---|
-| `src/agentone/loop.py` | **The interview file.** Raw Messages-API agent loop |
-| `src/agentone/loop_openai.py` | Same loop on OpenAI Chat Completions (`tool_calls`, `role: tool`) |
-| `src/agentone/harnesses.py` | Side-by-side runner: anthropic / openai / deepagents |
-| `src/agentone/tools.py` | Tool schema + dispatch, errors returned to the model |
-| `src/agentone/graphrag.py` | Triples → graph, entity linking, k-hop local search, communities |
-| `src/agentone/lg_agent.py` | LangGraph: state, nodes, conditional edges, checkpointer |
-| `src/agentone/deep_agent.py` | deepagents: todos, virtual FS, subagents |
-| `src/agentone/sdk_agent.py` | Claude Agent SDK: in-process MCP tools, built-in loop |
-| `src/agentone/evals/offline.py` | Dataset + code/trajectory/LLM-judge evaluators, LangSmith `evaluate` |
-| `src/agentone/evals/online.py` | `@traceable`, sampling, reference-free scores, user feedback |
+| `models.py` | **pydantic**: `Card, Triple, CardExtraction, DraftCard, RouteDecision, Score, Attempt` (bounds → invalid judge output = retry) |
+| `llm.py` | `LLM` protocol; Anthropic (forced tool call = schema output) and OpenAI (JSON mode) impls; validate + retry once |
+| `embed.py` | embedders + cosine (`HashEmbedder` offline, `OpenAIEmbedder`) |
+| `store.py` | **vector side**: card→embedding; **graph side**: card→triples; graph derived (nodes = entities, edges carry `card_id` provenance); attempts; scheduler |
+| `ingest.py` | card → embed + extract triples + persist |
+| `retrieve.py` | vector top-k + graph k-hop around entities named in the query, fused with reciprocal-rank fusion; `exclude` |
+| `session.py` | **LangGraph** `StateGraph`: route → ask / create_card / score; checkpointer per `thread_id` |
+| `evals.py` | retrieval recall@k (no key), router accuracy, judge accuracy (need an LLM) |
+| `cli.py` | study/exercise REPLs |
 
-## Plan (adapt to your days)
+Honest limits: entity linking is substring match; `HashEmbedder` is lexical, so the offline eval is easy and does not
+show real semantic retrieval; no spaced-repetition scheduling beyond "weakest first".
 
-**Day 1 — Raw loop (most important).** Read `loop.py`, then *delete it and rewrite from memory* until you can in
-~15 min. Must-know: `stop_reason == "tool_use"`; append the assistant `content` verbatim; ALL tool results for one
-turn go in ONE user message, each with matching `tool_use_id`; `is_error`; `max_steps` guard; system prompt separate.
-Then extend by hand: parallel tool calls, streaming, token/cost tracking, prompt caching, a 3rd tool,
-context trimming, retries on 429/overloaded. Write tests with `tests/fakes.py`.
+## Foundations (earlier lab files, still here)
+Raw agent loops `loop.py` (Anthropic) / `loop_openai.py`, `harnesses.py` (anthropic / openai / deepagents side by side),
+`lg_agent.py`, `deep_agent.py`, `sdk_agent.py`, `graphrag.py`, `evals/offline.py|online.py` (LangSmith). Run
+`uv run python -m agentone.harnesses`. Know `loop.py` cold; it is the likeliest interview exercise.
 
-**Day 2 — GraphRAG.** Why graph beats vector for multi-hop (relationships live in edges, not chunks). Rewrite
-`graphrag.py`: build graph, link entities, k-hop retrieval. Extend: LLM triple extraction (JSON output, validate),
-embedding-based entity linking, hybrid (vector seed + graph expand), community summaries for global questions.
-Know the tradeoffs: indexing cost, extraction errors, hop explosion (cap hops / prune by relation).
+## Study plan
+**Day 1** raw loop (rewrite `loop.py` from memory; wire formats for Anthropic vs OpenAI). **Day 2** cards data model:
+rewrite `models.py`, `ingest.py`, `retrieve.py`; swap `HashEmbedder` for real embeddings, replace substring entity
+linking, add community summaries. **Day 3** rebuild `session.py` from scratch (state, reducer, conditional edges,
+checkpointer; add `interrupt_before` human approval before card creation). **Day 4** evals: extend `evals.py`
+(router/judge on real labels, LangSmith `evaluate`, `@traceable` online feedback). **Day 5** timed mock: "build an
+agent that does X over a document set with tools" from an empty file.
 
-**Day 3 — LangGraph + deepagents.** Rebuild the loop as `StateGraph` (`lg_agent.py`). Add: checkpointer + `thread_id`
-memory, `interrupt_before=["tools"]` human approval, a custom reducer, a router node. Then `deep_agent.py`: what
-middleware adds (planning, filesystem, subagents, summarisation) and when that is overkill.
-
-**Day 4 — Agent SDK + evals.** `sdk_agent.py` (custom tools via MCP server, `allowed_tools`, hooks, permissions).
-Offline: run `python -m agentone.evals.offline`; break the agent on purpose and watch scores fall; add a failing
-case, fix, re-run (regression loop). Online: trace, sample, reference-free metrics, feedback, dashboards/alerts.
-Be ready to discuss judge bias/validation, dataset construction, flaky tests (`num_repetitions`), trajectory vs outcome.
-
-**Day 5 — Mock interviews.** 45 min timer: "build an agent that answers questions over X with tools Y" from an empty
-file; then "here is a buggy agent — fix it" (try: result sent as separate messages, dropped `tool_use_id`, no max-step).
-
-## Interview talking points
-- Agent = LLM + tools + loop + stopping condition; everything else is context management and reliability.
-- Failure modes: infinite loops, tool errors, context blowup, hallucinated tool args, prompt injection via tool output.
-- Evals first: define success, build 20 good cases, trajectory + outcome, then iterate.
+Proxy: Anthropic SDK honours `ANTHROPIC_BASE_URL`, OpenAI SDK `OPENAI_BASE_URL`. LangSmith:
+`LANGSMITH_TRACING=true LANGSMITH_API_KEY=... LANGSMITH_PROJECT=agentone`.

@@ -23,3 +23,13 @@ class FakeOpenAI:
         fin, content, tcs = self._turns.pop(0)
         calls = [NS(id=i, function=NS(name=n, arguments=a)) for i, n, a in tcs] or None
         return NS(choices=[NS(finish_reason=fin, message=NS(content=content, tool_calls=calls))])
+
+
+class FakeLLM:
+    """Scripted cards.llm.LLM: structured outputs keyed by pydantic class, texts in order. Logs every call."""
+    def __init__(self, structured=None, texts=None):
+        self.s = {k: list(v) for k, v in (structured or {}).items()}; self.t = list(texts or []); self.log = []
+    def structured(self, system, user, schema):
+        self.log.append(("structured", schema.__name__, user)); return self.s[schema].pop(0)
+    def text(self, system, messages):
+        self.log.append(("text", system, messages)); return self.t.pop(0)

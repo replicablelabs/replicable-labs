@@ -30,3 +30,8 @@ def test_reports_refunds_already_issued():
 def test_not_found_is_an_actionable_error_not_null():
     out = lookup_order(World(), "9999")
     assert out != "null" and out.startswith("ERROR") and "not found" in out and "9999" in out
+
+def test_derives_days_since_delivery_because_the_model_does_not_know_todays_date():
+    assert json.loads(lookup_order(World(), "1001"))["days_since_delivery"] == 8
+    assert json.loads(lookup_order(World(), "1004"))["days_since_delivery"] == 78
+    assert json.loads(lookup_order(World(), "1002"))["days_since_delivery"] is None

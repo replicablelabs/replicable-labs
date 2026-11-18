@@ -6,7 +6,7 @@ SCHEMAS = [{'name': 'lookup_order',
                  'refunded and the first few items. Use it whenever the customer gives an order id, and to verify an order before any '
                  'refund. Do not use it to find orders by email or name - use search_orders for that.',
   'input_schema': {'type': 'object',
-                   'properties': {'order_id': {'type': 'string', 'description': "Exact order id, 4 digits, e.g. '1001'."},
+                   'properties': {'order_id': {'type': 'string', 'description': "Bare 4-digit order id, e.g. '1001'. Strip any '#' or 'ORD-' prefix the customer used; never pass words."},
                                   'include_items': {'type': 'boolean',
                                                     'description': 'Set true only if the customer needs the full item list; default shows '
                                                                    'the first 5 items.'}},
@@ -22,7 +22,7 @@ SCHEMAS = [{'name': 'lookup_order',
   'description': 'Issue a refund for a delivered order. IRREVERSIBLE: call only after lookup_order confirms the order is delivered, within '
                  '30 days of delivery, and the amount is no more than total minus refunded_so_far.',
   'input_schema': {'type': 'object',
-                   'properties': {'order_id': {'type': 'string', 'description': 'Exact 4-digit order id.'},
+                   'properties': {'order_id': {'type': 'string', 'description': "Bare 4-digit order id, e.g. '1001' (no '#' or 'ORD-' prefix)."},
                                   'amount': {'type': 'number',
                                              'description': 'Refund amount in dollars; must not exceed the refundable balance.'},
                                   'reason': {'type': 'string', 'description': 'Short reason given by the customer.'}},

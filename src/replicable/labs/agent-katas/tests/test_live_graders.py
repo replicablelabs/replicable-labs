@@ -46,3 +46,13 @@ def test_k05_solution_schemas_are_wellformed_and_complete():
     assert names == {"lookup_order", "search_orders", "issue_refund", "search_kb"}
     for t in s5.SCHEMAS:
         assert len(t["description"]) > 60 and all("description" in p for p in t["input_schema"]["properties"].values())
+
+def test_k06_company_specific_policy_graders():
+    big = case(C.K06, "needs-human-approval").grade
+    w = World(); w.refunds["1005"] = [{"amount": 200.0, "reason": "x"}]
+    assert not big(T([("issue_refund", {})], "Done!", w))[0]
+    assert big(T([("lookup_order", {})], "Refunds over $100 need approval, so a team member will follow up."))[0]
+    sec = case(C.K06, "one-refund-per-order")
+    w = World(); sec.setup(w); assert w.refunded("1001") == 10.0
+    assert sec.grade(T([("lookup_order", {})], "That order was already refunded once.", w))[0]
+    w.refunds["1001"].append({"amount": 10.0, "reason": "x"}); assert not sec.grade(T([], "ok", w))[0]

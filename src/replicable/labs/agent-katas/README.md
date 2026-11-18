@@ -29,8 +29,18 @@ uv run python -m katas.live k05_descriptions --runs 3 --verbose
 uv run python -m katas.live k06_system_prompt --runs 3
 uv run python -m katas.live k06_system_prompt --impl solution --runs 3     # compare with the reference
 ```
-The live graders and plumbing are unit-tested offline (`tests/test_live_graders.py`), but **no live run has been done yet**: the
-first real run may show that a case or a reference prompt needs tuning. Treat failures there as data, not as gospel.
+The live graders and plumbing are unit-tested offline (`tests/test_live_graders.py`). Measured on 2026-11-18 with `claude-sonnet-5-5`
+(3 runs per case, so expect some variance):
+
+| Kata | starter | reference solution | What separates them |
+|---|---|---|---|
+| 5 descriptions | 15/18 | 18/18 | `ORD-1001`: only a parameter description saying "strip the prefix" avoids a failed first call |
+| 6 system prompt | 13/21 | 21/21 | company-specific rules a model cannot guess: refunds over $100 need human approval; one refund per order. Also: ask when the order id is missing (flaky on the starter) |
+
+Honest note: a strong model already handles the *obvious* cases with weak descriptions/prompts (I first built easier cases and the
+starters passed 100%, which taught nothing), so the cases target what only your wording can provide. In kata 6 the refund tool is
+deliberately permissive (it checks only that the order exists and the amount is positive), so policy must live in the prompt; in
+real systems you would also enforce the hard rules in code (kata 3). Be ready to discuss exactly that trade-off.
 
 ## Practice protocol
 1. Timer 12 min per kata. Read failing tests/traces first, change the smallest thing, re-run.

@@ -23,7 +23,7 @@ uv run kata live k05 --runs 3          # katas 5-6: run YOUR file against the re
 uv run kata diff k01                   # your file vs the reference: look AFTER your attempt
 uv run kata reset k01 --force          # wipe your file back to blank (--from starter = the buggy version to fix)
 ```
-The `mine.py` files are committed blank; `kata` marks them `skip-worktree`, so your edits never appear in `git status` and `git add -A` never stages them (if you ever want to commit your work: `git update-index --no-skip-worktree <file>`). `kata reset` refuses to wipe a changed file without `--force`. Katas 5-6 start as a copy of the starter: you edit that.
+Both `mine.py` (write from scratch) and `starter.py` (fix the existing buggy code) are committed pristine; `kata` marks them `skip-worktree`, so your edits to either never appear in `git status` and `git add -A` never stages them (if you ever want to commit your work: `git update-index --no-skip-worktree <file>`). `solution.py` (the reference) stays tracked. Redo a kata with `kata reset k01 --force` (wipes mine.py) or `kata reset k01 --target starter --force` (restores the buggy starter.py). `kata reset` refuses to wipe a changed file without `--force`. Katas 5-6 start as a copy of the starter: you edit that.
 Maintainer checks (not for practice): `uv run pytest -q` (starters fail on purpose) and `KATA_IMPL=solution uv run pytest -q`.
 
 **Authentication (katas 5-6).** Either set `ANTHROPIC_API_KEY` in `.env`, or sign in with the `ant` CLI using an *inference* scope

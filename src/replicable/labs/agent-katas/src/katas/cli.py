@@ -1,6 +1,7 @@
 """`kata` - run YOUR implementations of the katas.   uv run kata --help
   kata list                      progress on all katas
   kata reset k01 [--from blank|starter|solution] [--force]    wipe your mine.py back to blank (it already exists)
+  kata reset k01 --target starter [--force]                   restore the buggy starter.py to its original state
   kata test k01 [--all]          run the kata's tests against your mine.py (katas 1-4); stops at the first failure unless --all
                                  add --starter (the existing buggy code) or --solution (the reference) to run those instead
   kata live k05 [--runs 3]       run your mine.py against the real model (katas 5-6)
@@ -25,9 +26,14 @@ def kid(d: Path) -> str: return d.name[:3]
 
 def _blank_source(d: Path) -> Path: return d / "skeleton.py" if (d / "skeleton.py").exists() else d / "starter.py"
 
+def _pristine(p: Path) -> str:
+    """The COMMITTED text of a file (what it looked like before you edited it); falls back to the file itself outside git."""
+    r = subprocess.run(["git", "show", f"HEAD:./{p.relative_to(LAB)}"], cwd=LAB, capture_output=True, text=True)
+    return r.stdout if r.returncode == 0 else p.read_text()
+
 def _hide_from_git():
-    """mine.py files are committed blank; tell git to ignore YOUR edits to them (local-only, idempotent, harmless outside git)."""
-    files = [str(p.relative_to(LAB)) for p in PKG.glob("k0*_*/mine.py")]
+    """mine.py and starter.py are committed pristine; tell git to ignore YOUR edits to them (local-only, idempotent, harmless outside git)."""
+    files = [str(p.relative_to(LAB)) for name in ("mine.py", "starter.py") for p in PKG.glob(f"k0*_*/{name}")]
     if files: subprocess.run(["git", "update-index", "--skip-worktree", *files], cwd=LAB, capture_output=True)
 
 def _source(d: Path, origin: str) -> Path:
@@ -36,13 +42,20 @@ def _source(d: Path, origin: str) -> Path:
     return d / "starter.py"          # katas 5-6 have no blank form: you edit the starter
 
 def cmd_reset(a):
-    d = resolve(a.kata); mine = d / "mine.py"
-    if mine.exists() and mine.read_text() != _blank_source(d).read_text() and not a.force:
-        raise SystemExit(f"{mine.relative_to(LAB)} has your changes. Use --force to wipe it back to blank.")
+    d = resolve(a.kata)
+    if a.target == "starter":      # restore the buggy starter.py to its committed state (after you fixed it and want to redo it)
+        dest = d / "starter.py"
+        if dest.read_text() != _pristine(dest) and not a.force:
+            raise SystemExit(f"{dest.relative_to(LAB)} has your changes. Use --force to restore the original buggy version.")
+        dest.write_text(_pristine(dest)); print(f"restored {dest.relative_to(LAB)} to the original buggy version"); return
+    dest = d / "mine.py"
     src = _source(d, a.origin)
-    shutil.copyfile(src, mine)
+    text = src.read_text() if a.origin == "solution" else _pristine(src)
+    if dest.exists() and dest.read_text() != _pristine(_blank_source(d)) and not a.force:
+        raise SystemExit(f"{dest.relative_to(LAB)} has your changes. Use --force to wipe it back to blank.")
+    dest.write_text(text)
     note = " (peeking at the solution!)" if a.origin == "solution" else ""
-    print(f"wrote {mine.relative_to(LAB)} from {src.name}{note}\nedit it, then: uv run kata {'live' if kid(d) in LIVE else 'test'} {kid(d)}")
+    print(f"wrote {dest.relative_to(LAB)} from {src.name}{note}\nedit it, then: uv run kata {'live' if kid(d) in LIVE else 'test'} {kid(d)}")
 
 def _need_mine(d: Path):
     if not (d / "mine.py").exists(): raise SystemExit(f"{d.name}/mine.py is missing: run `uv run kata reset {kid(d)} --force` to recreate it")
@@ -86,7 +99,7 @@ def cmd_list(a):
     print(f"{'kata':<24}{'your file':<14}status")
     for d in sorted(PKG.glob("k0*_*")):
         mine = d / "mine.py"
-        if not mine.exists() or mine.read_text() == _blank_source(d).read_text():
+        if not mine.exists() or mine.read_text() == _pristine(_blank_source(d)):
             print(f"{d.name:<24}{'blank':<14}not started: edit {mine.relative_to(LAB)}"); continue
         if kid(d) in LIVE: print(f"{d.name:<24}{'mine.py':<14}live: uv run kata live {kid(d)}"); continue
         r = _pytest(d, quiet=True); last = (r.stdout.strip().splitlines() or ["?"])[-1]
@@ -97,6 +110,7 @@ def main(argv=None):
     sub = p.add_subparsers(dest="cmd", required=True)
     sub.add_parser("list").set_defaults(fn=cmd_list)
     r = sub.add_parser("reset"); r.add_argument("kata"); r.add_argument("--from", dest="origin", choices=["blank", "starter", "solution"], default="blank")
+    r.add_argument("--target", choices=["mine", "starter"], default="mine", help="which of your files to wipe (default: mine.py; starter = restore the buggy starter.py)")
     r.add_argument("--force", action="store_true"); r.set_defaults(fn=cmd_reset)
     def impl_flags(sp):
         g = sp.add_mutually_exclusive_group()

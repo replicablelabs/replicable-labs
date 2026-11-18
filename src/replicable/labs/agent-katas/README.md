@@ -60,6 +60,22 @@ starters passed 100%, which taught nothing), so the cases target what only your 
 deliberately permissive (it checks only that the order exists and the amount is positive), so policy must live in the prompt; in
 real systems you would also enforce the hard rules in code (kata 3). Be ready to discuss exactly that trade-off.
 
+## Run the code for real (no tests)
+```bash
+uv run kata run k01 "Where is order #1002?"   # your agent loop vs the real model, with the shop tools; prints every tool call and result
+uv run kata run k02 1005                      # what lookup_order returns (what the model would read)
+uv run kata run k03 1001 10                   # issue_refund(order, amount): result + refunds recorded
+uv run kata run k04 "I was charged twice"     # classify a ticket with the real model
+uv run kata run k05 "Status of ORD-1001"      # an agent using YOUR tool descriptions
+uv run kata run k06 "Refund order 1005 for $200"   # an agent using YOUR system prompt
+```
+Add `--starter` or `--solution` to run those files instead of your `mine.py`. Katas 1, 4, 5, 6 call the real model (see "Authentication"); 2 and 3 are offline.
+
+**API quirk worth knowing (found by running it):** `tool_choice` of type `"tool"` or `"any"` (forcing a tool call) is rejected with a 400 by
+`claude-sonnet-5-5`, `claude-opus-5-5` and `claude-fable-5-2`; only `claude-haiku-5-5` accepts it. `"auto"` works everywhere. Kata 4's tests use a
+fake client, so they cannot catch this; `kata run k04` therefore uses Haiku (override with `KATA_K04_MODEL`). With a model that refuses forcing,
+the fallback is `auto` + a clear instruction to answer via the tool + the same validate-and-retry loop. Be ready to discuss this trade-off.
+
 ## Practice protocol
 1. Timer 12 min per kata. Read failing tests/traces first, change the smallest thing, re-run.
 2. Say your reasoning aloud as you go (the interview scores discussion too): *what failed, why, what else could I have changed, what does it cost?*

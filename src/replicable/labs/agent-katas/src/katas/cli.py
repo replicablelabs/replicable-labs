@@ -4,6 +4,7 @@
   kata test k01 [--all]          run the kata's tests against your mine.py (katas 1-4); stops at the first failure unless --all
                                  add --starter (the existing buggy code) or --solution (the reference) to run those instead
   kata live k05 [--runs 3]       run your mine.py against the real model (katas 5-6)
+  kata run k01 [input...]        RUN the kata code (no tests) and print what happens step by step; see katas/run.py
   kata diff k01                  your code vs the reference (look AFTER your attempt)
 """
 import argparse, difflib, os, re, shutil, subprocess, sys
@@ -68,6 +69,13 @@ def cmd_live(a):
     from .live import main as live_main
     live_main([d.name, "--impl", a.impl, "--runs", str(a.runs), *(["--verbose"] if a.verbose else [])])
 
+def cmd_run(a):
+    d = resolve(a.kata)
+    if a.impl == "mine": _need_mine(d)
+    print(f"[running {d.name}/{a.impl}.py]", flush=True)
+    from .run import run
+    run(d.name, a.impl, a.args)
+
 def cmd_diff(a):
     d = resolve(a.kata); _need_mine(d)
     mine, ref = (d / "mine.py").read_text().splitlines(), (d / "solution.py").read_text().splitlines()
@@ -98,6 +106,7 @@ def main(argv=None):
         sp.set_defaults(impl="mine")
     t = sub.add_parser("test"); t.add_argument("kata"); impl_flags(t); t.add_argument("-a", "--all", action="store_true", help="show every failing test (default: stop at the first one)"); t.set_defaults(fn=cmd_test)
     l = sub.add_parser("live"); l.add_argument("kata"); impl_flags(l); l.add_argument("--runs", type=int, default=3); l.add_argument("--verbose", action="store_true"); l.set_defaults(fn=cmd_live)
+    u = sub.add_parser("run"); u.add_argument("kata"); u.add_argument("args", nargs="*", help="kata-specific input, e.g. a question or an order id"); impl_flags(u); u.set_defaults(fn=cmd_run)
     sub.add_parser("diff").set_defaults(fn=cmd_diff); sub.choices["diff"].add_argument("kata")
     a = p.parse_args(argv); _hide_from_git(); a.fn(a)
 

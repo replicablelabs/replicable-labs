@@ -9,7 +9,7 @@ cd src/replicable/labs/agent-katas     # from the repo root
 uv sync
 uv run pytest -q                       # starters: the planted bugs FAIL (that is the exercise)
 KATA_IMPL=solution uv run pytest -q    # reference solutions: everything passes (peek only after your attempt)
-cp ../agentone/.env.example .env       # then set ANTHROPIC_API_KEY (only the live katas need it)
+cp .env.example .env                   # then set ANTHROPIC_API_KEY (only the live katas 5-6 need it)
 ```
 
 ## Katas (do in order; ~10-15 min each, then explain out loud)

@@ -2,6 +2,7 @@
   kata list                      progress on all katas
   kata reset k01 [--from blank|starter|solution] [--force]    wipe your mine.py back to blank (it already exists)
   kata test k01 [--all]          run the kata's tests against your mine.py (katas 1-4); stops at the first failure unless --all
+                                 add --starter (the existing buggy code) or --solution (the reference) to run those instead
   kata live k05 [--runs 3]       run your mine.py against the real model (katas 5-6)
   kata diff k01                  your code vs the reference (look AFTER your attempt)
 """
@@ -45,24 +46,27 @@ def cmd_reset(a):
 def _need_mine(d: Path):
     if not (d / "mine.py").exists(): raise SystemExit(f"{d.name}/mine.py is missing: run `uv run kata reset {kid(d)} --force` to recreate it")
 
-def _pytest(d: Path, quiet=False, extra=()):
-    env = {**os.environ, "KATA_IMPL": "mine"}
+def _pytest(d: Path, quiet=False, extra=(), impl="mine"):
+    env = {**os.environ, "KATA_IMPL": impl}
     cmd = [sys.executable, "-m", "pytest", str(LAB / "tests" / f"test_{kid(d)}.py"), "-q", "--no-header", *extra]
     return subprocess.run(cmd, env=env, cwd=LAB, capture_output=quiet, text=True)
 
 def cmd_test(a):
     d = resolve(a.kata)
     if kid(d) in LIVE: raise SystemExit(f"{kid(d)} needs the real model: use `uv run kata live {kid(d)}`")
-    _need_mine(d); raise SystemExit(_pytest(d, extra=[] if a.all else ["-x"]).returncode)
+    if a.impl == "mine": _need_mine(d)
+    print(f"[running {d.name}/{a.impl}.py]", flush=True)
+    raise SystemExit(_pytest(d, extra=[] if a.all else ["-x"], impl=a.impl).returncode)
 
 def cmd_live(a):
     d = resolve(a.kata)
     if kid(d) not in LIVE: raise SystemExit(f"{kid(d)} is checked by tests: use `uv run kata test {kid(d)}`")
-    _need_mine(d)
+    if a.impl == "mine": _need_mine(d)
+    print(f"[running {d.name}/{a.impl}.py]", flush=True)
     if not (os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_PROFILE")):
         print("note: neither ANTHROPIC_API_KEY nor ANTHROPIC_PROFILE is set (e.g. `export ANTHROPIC_PROFILE=dev`)", file=sys.stderr)
     from .live import main as live_main
-    live_main([d.name, "--impl", "mine", "--runs", str(a.runs), *(["--verbose"] if a.verbose else [])])
+    live_main([d.name, "--impl", a.impl, "--runs", str(a.runs), *(["--verbose"] if a.verbose else [])])
 
 def cmd_diff(a):
     d = resolve(a.kata); _need_mine(d)
@@ -86,8 +90,14 @@ def main(argv=None):
     sub.add_parser("list").set_defaults(fn=cmd_list)
     r = sub.add_parser("reset"); r.add_argument("kata"); r.add_argument("--from", dest="origin", choices=["blank", "starter", "solution"], default="blank")
     r.add_argument("--force", action="store_true"); r.set_defaults(fn=cmd_reset)
-    t = sub.add_parser("test"); t.add_argument("kata"); t.add_argument("-a", "--all", action="store_true", help="show every failing test (default: stop at the first one)"); t.set_defaults(fn=cmd_test)
-    l = sub.add_parser("live"); l.add_argument("kata"); l.add_argument("--runs", type=int, default=3); l.add_argument("--verbose", action="store_true"); l.set_defaults(fn=cmd_live)
+    def impl_flags(sp):
+        g = sp.add_mutually_exclusive_group()
+        g.add_argument("--mine", dest="impl", action="store_const", const="mine", help="run your mine.py (default)")
+        g.add_argument("--starter", dest="impl", action="store_const", const="starter", help="run the existing buggy starter.py")
+        g.add_argument("--solution", dest="impl", action="store_const", const="solution", help="run the reference solution.py")
+        sp.set_defaults(impl="mine")
+    t = sub.add_parser("test"); t.add_argument("kata"); impl_flags(t); t.add_argument("-a", "--all", action="store_true", help="show every failing test (default: stop at the first one)"); t.set_defaults(fn=cmd_test)
+    l = sub.add_parser("live"); l.add_argument("kata"); impl_flags(l); l.add_argument("--runs", type=int, default=3); l.add_argument("--verbose", action="store_true"); l.set_defaults(fn=cmd_live)
     sub.add_parser("diff").set_defaults(fn=cmd_diff); sub.choices["diff"].add_argument("kata")
     a = p.parse_args(argv); _hide_from_git(); a.fn(a)
 

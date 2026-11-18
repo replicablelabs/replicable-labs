@@ -7,10 +7,22 @@ Raw `anthropic` SDK only: no frameworks, no databases, no Docker.
 ```bash
 cd src/replicable/labs/agent-katas     # from the repo root
 uv sync
-uv run pytest -q                       # starters: the planted bugs FAIL (that is the exercise)
-KATA_IMPL=solution uv run pytest -q    # reference solutions: everything passes (peek only after your attempt)
-cp .env.example .env                   # then set ANTHROPIC_API_KEY (only the live katas 5-6 need it)
+cp .env.example .env                   # katas 1-4 need no key; 5-6 call the model (see "Authentication")
+
+# Your own code, one file per kata (gitignored): src/katas/k0N_*/mine.py
+uv run kata list                       # progress
+uv run kata reset k01                  # blank skeleton: write it from scratch   (--from starter = fix the buggy version)
+uv run kata test k01                   # run the tests against YOUR file         (-x stops at first failure)
+uv run kata live k05 --runs 3          # katas 5-6: run YOUR file against the real model (--verbose shows tool calls)
+uv run kata diff k01                   # your file vs the reference: look AFTER your attempt
+uv run kata reset k01 --force          # start over (overwrites your file)
 ```
+`kata reset` refuses to overwrite an existing `mine.py` unless you pass `--force`. Katas 5-6 have no blank form: you edit a copy of the starter.
+Maintainer checks (not for practice): `uv run pytest -q` (starters fail on purpose) and `KATA_IMPL=solution uv run pytest -q`.
+
+**Authentication (katas 5-6).** Either set `ANTHROPIC_API_KEY` in `.env`, or sign in with the `ant` CLI using an *inference* scope
+(`ant auth login --profile dev --scope "user:inference"`, then `export ANTHROPIC_PROFILE=dev`). The default `ant` login only has
+`org:admin`, which the API rejects for inference.
 
 ## Katas (do in order; ~10-15 min each, then explain out loud)
 

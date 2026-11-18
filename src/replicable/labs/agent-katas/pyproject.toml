@@ -5,6 +5,9 @@ description = "Timed drills for improving an Anthropic tool-use agent (tools, to
 requires-python = ">=3.11"
 dependencies = ["anthropic", "pytest", "python-dotenv"]
 
+[project.scripts]
+kata = "katas.cli:main"
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"

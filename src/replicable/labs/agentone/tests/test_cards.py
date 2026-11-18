@@ -9,13 +9,14 @@ from agentone.cards.seed import load_seed
 from agentone.cards.session import Session, build_session, leaks
 from agentone.cards.store import CardStore
 from fakes import FakeLLM
+from fake_backends import fake_store
 
 EMB = HashEmbedder()
 def T(s, r, o): return Triple(subject=s, relation=r, object=o)
 
 @pytest.fixture
-def st(tmp_path):
-    s = CardStore(tmp_path / "cards.db", EMB.name, EMB.dim); load_seed(s, EMB); return s
+def st():
+    s = fake_store(EMB); load_seed(s, EMB); return s
 
 # ---- pydantic ----
 def test_score_bounds_and_triple_validation():
@@ -24,15 +25,13 @@ def test_score_bounds_and_triple_validation():
     assert T(" a   b ", "r", "o").subject == "a b"
 
 # ---- ingest: vector side + graph side + provenance ----
-def test_ingest_embeds_and_builds_graph_with_provenance(tmp_path):
-    st = CardStore(tmp_path / "db.sqlite", EMB.name, EMB.dim)
+def test_ingest_embeds_and_builds_graph_with_provenance():
+    st = fake_store(EMB)
     llm = FakeLLM({CardExtraction: [CardExtraction(triples=[T("Kafka", "feeds", "Atlas"), T("kafka", "is_a", "log")])]})
     c = ingest_card(st, llm, EMB, "What feeds Atlas?", "Kafka", card_id="x1")
     assert len(st.vector_of("x1")) == EMB.dim
     assert st.stats() == (3, 2)                                                      # kafka/Kafka deduped
-    assert {r["card_id"] for r in st.edges()} == {"x1"}
-    st.close(); st2 = CardStore(tmp_path / "db.sqlite", EMB.name, EMB.dim)           # real storage: survives reopen
-    assert st2.get("x1").question == c.question and st2.stats() == (3, 2) and st2.vector_of("x1") is not None
+    assert {r["card_id"] for r in st.edges()} == {"x1"} and st.get("x1").question == c.question
 
 # ---- retrieval ----
 def test_graph_mode_follows_entities_and_exclude_removes_edges(st):
@@ -41,8 +40,8 @@ def test_graph_mode_follows_entities_and_exclude_removes_edges(st):
     r2 = retrieve(st, EMB, "tell me about the checkpointer", mode="graph", exclude={"c3"})
     assert all(c.id != "c3" for c in r2.cards) and not any("thread_id" in f for f in r2.facts)  # no leaking edges
 
-def test_retrieval_eval_runs():
-    r = retrieval_eval(EMB)
+def test_retrieval_eval_runs(st):
+    r = retrieval_eval(st, EMB)
     assert set(r) == {"vector", "graph", "hybrid"} and r["hybrid"] >= 0.5
 
 # ---- session: routing guard, study card creation, exercise secrecy + scoring ----
@@ -95,17 +94,17 @@ def test_scheduler_prefers_unattempted_then_weakest(st):
         if c.id != "c1": st.record(Attempt(card_id=c.id, user_answer="x", score=0.9, verdict="correct", feedback=""))
     assert st.next_card("exercise").id == "c1"                      # now the weakest
 
-# ---- real storage behaviours ----
-def test_embedder_mismatch_is_refused(tmp_path):
-    CardStore(tmp_path / "x.db", "hash", 512).close()
-    with pytest.raises(ValueError, match="built with embedder 'hash'"): CardStore(tmp_path / "x.db", "openai:text-embedding-3-small", 1536)
+# ---- facade behaviours (backends faked here; real ones are covered in test_integration.py) ----
+def test_embedder_mismatch_is_refused():
+    st = fake_store(EMB)
+    with pytest.raises(ValueError, match="indexed with embedder 'hash'"):
+        CardStore(st.pg, st.vec, st.graph, "openai:text-embedding-3-small")
 
-def test_attempts_and_cards_survive_reopen(tmp_path):
-    from agentone.cards.models import Attempt
-    a = CardStore(tmp_path / "p.db", EMB.name, EMB.dim); load_seed(a, EMB)
-    a.record(Attempt(card_id="c2", user_answer="u", score=0.5, verdict="partial", feedback="f")); a.close()
-    b = CardStore(tmp_path / "p.db", EMB.name, EMB.dim)
-    assert b.count() == 8 and b.mean_score("c2") == 0.5 and b.search(EMB.embed(["checkpointer"])[0], 1)[0][0].id == "c3"
+def test_add_compensates_when_a_later_store_fails():
+    st = fake_store(EMB); st.graph.fail = True
+    with pytest.raises(RuntimeError):
+        ingest_card(st, None, EMB, "q", "a", card_id="z", triples=[T("a", "r", "b")])
+    assert not st.has("z") and st.vector_of("z") is None            # postgres + qdrant writes were undone
 
 def test_graph_hops_widen_reach(st):
     one = {(r["subject"], r["object"]) for r in st.neighborhood(["checkpointer"], 1)}

@@ -6,20 +6,39 @@ knowledge graph, hybrid retrieval, LLM-judge scoring, offline evals. All local (
 
 ```bash
 cd src/replicable/labs/agentone       # from the repo root
-uv sync && uv run pytest -q           # 18 tests, no API key (scripted fake LLM + hash embedder)
+uv sync && uv run pytest -q           # unit tests need no servers/keys; integration tests auto-skip when servers are down
 
-cp .env.example .env                  # then fill in ANTHROPIC_API_KEY / OPENAI_API_KEY / LANGSMITH_API_KEY (gitignored)
-# (exported shell vars override .env; use --provider openai to run on OpenAI)
+cp .env.example .env                  # keys + which model does what (below) + storage URLs; gitignored
+scripts/services.sh install           # once: Postgres 16 + Neo4j via Homebrew, Qdrant release binary (no Docker)
+scripts/services.sh start             # Postgres :5433, Qdrant :6333, Neo4j :7687   (stop / status too)
 alias cards="uv run python -m agentone.cards.cli"
-cards seed                            # 8-card demo deck (pre-extracted triples, no LLM needed)
-cards add "What is X?" "X is ..."     # embeds the card + LLM-extracts triples -> graph
+cards doctor                          # prints the model per role + checks all three stores
+cards seed                            # 8-card demo deck (pre-extracted triples; embeds with EMBEDDING_*)
+cards add "What is X?" "X is ..."     # extract triples (EXTRACTION_*), embed (EMBEDDING_*), write all three stores
 cards study                           # or: cards study --card c3
-cards exercise                        # picks never-attempted, then weakest cards
-cards list; cards graph; cards eval   # eval = retrieval recall@3 (vector vs graph vs hybrid), offline
-# --provider openai   --embedder openai   (Claude has no embeddings API; default embedder is offline `hash`)
+cards exercise                        # never-attempted cards first, then weakest
+cards list; cards graph; cards eval   # eval = retrieval recall@3 vector vs graph vs hybrid over the stored deck
 ```
-Storage is one SQLite file, `data/cards.db` (gitignored; override with `--db` / `AGENTONE_DB`): no server, no Docker, nothing
-held in memory. The file records which embedder built it and refuses a different one (use one `--embedder` per DB).
+
+## Which model does which job (`.env`)
+
+| Variable | Job |
+|---|---|
+| `INFERENCE_PROVIDER` / `INFERENCE_MODEL` (`anthropic`\|`openai`) | tutor replies, intent router, card drafting, answer judge |
+| `EXTRACTION_PROVIDER` / `EXTRACTION_MODEL` (`anthropic`\|`openai`) | card → knowledge-graph nodes and edges |
+| `EMBEDDING_PROVIDER` / `EMBEDDING_MODEL` (`openai`\|`voyage`\|`hash`) | card text → vector. **Anthropic has no embeddings API**; `voyage` is its recommended provider |
+
+## Storage
+
+| Store | Holds | Code |
+|---|---|---|
+| **PostgreSQL** | cards, attempts, embedder pin (relational source of truth) | `pg.py` |
+| **Qdrant** | one vector per card + card content payload, cosine semantic search | `vectors.py` |
+| **Neo4j** | `(:Entity)-[:REL {relation, card_id}]->(:Entity)` knowledge graph, k-hop Cypher | `graph.py` |
+
+`store.py` is the facade: it writes Postgres → Qdrant → Neo4j and undoes earlier writes if a later one fails (no cross-DB
+transaction; know the dual-write/outbox discussion). Changing `EMBEDDING_*` against an existing deck is refused (vectors would be
+incomparable): re-index into fresh databases. `tests/fake_backends.py` are in-memory stand-ins used by unit tests only.
 
 ## Study vs exercise
 
@@ -38,12 +57,13 @@ intents to `ask`. So exercise mode cannot create cards or leak, whatever the mod
 
 | File | Concept |
 |---|---|
+| `config.py` | env → validated pydantic `Settings` (one provider+model per role, infra URLs) |
 | `models.py` | **pydantic**: `Card, Triple, CardExtraction, DraftCard, RouteDecision, Score, Attempt` (bounds → invalid judge output = retry) |
 | `llm.py` | `LLM` protocol; Anthropic (forced tool call = schema output) and OpenAI (JSON mode) impls; validate + retry once |
-| `embed.py` | embedders + cosine (`HashEmbedder` offline, `OpenAIEmbedder`) |
-| `store.py` | **SQLite**: `cards`/`attempts` tables; **graph** = `triples` table (edges tagged with `card_id`; k-hop = recursive CTE); **vectors** = `sqlite-vec` `vec0` table (cosine KNN on disk); `meta` pins embedder+dim; scheduler. Prod equivalents: pgvector, Neo4j |
+| `embed.py` | embedders: OpenAI, Voyage (untested live), offline `HashEmbedder` |
+| `store.py` / `pg.py` / `vectors.py` / `graph.py` | facade + Postgres / Qdrant / Neo4j backends (see Storage) |
 | `ingest.py` | card → embed + extract triples + persist |
-| `retrieve.py` | sqlite-vec KNN + SQL graph k-hop around entities named in the query, fused with reciprocal-rank fusion; `exclude` |
+| `retrieve.py` | Qdrant KNN + Neo4j k-hop around entities named in the query, fused with reciprocal-rank fusion; `exclude` |
 | `session.py` | **LangGraph** `StateGraph`: route → ask / create_card / score; checkpointer per `thread_id` |
 | `evals.py` | retrieval recall@k (no key), router accuracy, judge accuracy (need an LLM) |
 | `cli.py` | study/exercise REPLs |

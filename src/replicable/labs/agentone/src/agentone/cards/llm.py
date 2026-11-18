@@ -54,5 +54,6 @@ class OpenAILLM:
             except ValidationError as e: err = e; user += f"\n\nYour previous JSON was invalid: {e}. Fix it."
         raise err  # type: ignore[misc]
 
-def get_llm(provider: str) -> LLM:
-    return {"anthropic": AnthropicLLM, "openai": OpenAILLM}[provider]()
+def get_llm(role) -> LLM:
+    """role: config.ChatModel (provider + model)."""
+    return {"anthropic": AnthropicLLM, "openai": OpenAILLM}[role.provider](model=role.model)

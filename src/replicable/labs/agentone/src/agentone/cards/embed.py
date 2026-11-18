@@ -28,18 +28,31 @@ class HashEmbedder:
         return out
 
 class OpenAIEmbedder:
-    DIMS = {"text-embedding-3-small": 1536, "text-embedding-3-large": 3072}
-    def __init__(self, client=None, model: str = "text-embedding-3-small"):
+    def __init__(self, model: str, dim: int, client=None):
         from openai import OpenAI
-        self.client, self.model = client or OpenAI(), model
-        self.name, self.dim = f"openai:{model}", self.DIMS[model]
+        self.client, self.model, self.dim, self.name = client or OpenAI(), model, dim, f"openai:{model}"
     def embed(self, texts):
-        r = self.client.embeddings.create(model=self.model, input=texts)
-        return [d.embedding for d in r.data]
+        kw = {"dimensions": self.dim} if self.model.startswith("text-embedding-3") else {}
+        r = self.client.embeddings.create(model=self.model, input=texts, **kw)
+        return [d.embedding for d in sorted(r.data, key=lambda d: d.index)]
+
+class VoyageEmbedder:
+    """Voyage AI (Anthropic's recommended embeddings provider). Plain REST; needs VOYAGE_API_KEY."""
+    URL = "https://api.voyageai.com/v1/embeddings"
+    def __init__(self, model: str, dim: int):
+        self.model, self.dim, self.name = model, dim, f"voyage:{model}"
+    def embed(self, texts):
+        import httpx, os
+        r = httpx.post(self.URL, json={"input": texts, "model": self.model, "output_dimension": self.dim},
+                       headers={"Authorization": f"Bearer {os.environ['VOYAGE_API_KEY']}"}, timeout=60)
+        r.raise_for_status()
+        return [d["embedding"] for d in sorted(r.json()["data"], key=lambda d: d["index"])]
 
 def cosine(a: list[float], b: list[float]) -> float:
     na, nb = math.sqrt(sum(x * x for x in a)), math.sqrt(sum(x * x for x in b))
     return sum(x * y for x, y in zip(a, b)) / (na * nb) if na and nb else 0.0
 
-def get_embedder(name: str) -> Embedder:
-    return {"hash": HashEmbedder, "openai": OpenAIEmbedder}[name]()
+def get_embedder(role) -> Embedder:
+    """role: config.EmbeddingModel."""
+    if role.provider == "hash": return HashEmbedder(role.dim)
+    return {"openai": OpenAIEmbedder, "voyage": VoyageEmbedder}[role.provider](role.model, role.dim)

@@ -54,7 +54,9 @@ class State(TypedDict, total=False):
     reply: str
     history: Annotated[list, operator.add]   # reducer: nodes append, checkpointer keeps it per thread
 
-def build_session(store: CardStore, llm: LLM, embedder: Embedder, checkpointer=None):
+def build_session(store: CardStore, llm: LLM, embedder: Embedder, extractor: LLM | None = None, checkpointer=None):
+    """llm = INFERENCE model (router, tutor, drafting, judge); extractor = EXTRACTION model (card -> triples)."""
+    extractor = extractor or llm
     def context(query: str, card_id: str) -> tuple[str, str]:
         r = retrieve(store, embedder, query, k=3, exclude={card_id})  # never retrieve the card at hand
         return ("\n".join(f"- Q: {c.question} A: {c.answer}" for c in r.cards) or "(none)",
@@ -85,7 +87,7 @@ def build_session(store: CardStore, llm: LLM, embedder: Embedder, checkpointer=N
         convo = "\n".join(f"{m['role']}: {m['content']}" for m in state["history"][-6:])
         draft = llm.structured(DRAFT_SYSTEM, f"Current card:\nQ: {card.question}\nA: {card.answer}\n\n"
                                              f"Conversation:\n{convo}", DraftCard)
-        new = ingest_card(store, llm, embedder, draft.question, draft.answer, prerequisite_of=card.id)
+        new = ingest_card(store, extractor, embedder, draft.question, draft.answer, prerequisite_of=card.id)
         reply = f"Created card [{new.id}] (prerequisite of {card.id}):\nQ: {new.question}\nA: {new.answer}"
         return {"reply": reply, "history": [{"role": "assistant", "content": reply}]}
 

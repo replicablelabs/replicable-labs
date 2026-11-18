@@ -4,8 +4,12 @@ Timed drills for the interview format: **improve an agent that uses tool use wit
 code: modify or create tools, write the logic behind them, adjust the prompting, and explain your trade-offs.
 Raw `anthropic` SDK only: no frameworks, no databases, no Docker.
 
+> **Run every command from this lab folder**, not the repo root. `uv run` uses the nearest `pyproject.toml`; at the repo root that is
+> the *other* project, which has no `kata` command and fails with `Failed to spawn: kata ... No such file or directory`.
+> From the repo root you can instead use `uv run --project src/replicable/labs/agent-katas kata ...`.
+
 ```bash
-cd src/replicable/labs/agent-katas     # from the repo root
+cd src/replicable/labs/agent-katas     # from the repo root: the lab folder, where all commands below must be run
 uv sync
 cp .env.example .env                   # katas 1-4 need no key; 5-6 call the model (see "Authentication")
 
@@ -71,3 +75,8 @@ real systems you would also enforce the hard rules in code (kata 3). Be ready to
 ## Layout
 `src/katas/{world,fakes,world_tools,cases,live,loader}.py` shared pieces; `k0N_*/starter.py` (yours) and `solution.py` (reference);
 `tests/` per kata. `KATA_IMPL=starter|solution` picks which implementation tests/live runner load.
+
+## Troubleshooting
+- `error: Failed to spawn: kata ... No such file or directory`: you are not in the lab folder (see the note at the top). `cd` into
+  `src/replicable/labs/agent-katas` and rerun. A stray `.venv` that uv created in the repo root is harmless (gitignored) and can be deleted.
+- `403 ... OAuth token does not meet scope requirement`: your `ant` sign-in has no inference scope (see "Authentication").

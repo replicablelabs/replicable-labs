@@ -9,15 +9,15 @@ cd src/replicable/labs/agent-katas     # from the repo root
 uv sync
 cp .env.example .env                   # katas 1-4 need no key; 5-6 call the model (see "Authentication")
 
-# Your own code, one file per kata (gitignored): src/katas/k0N_*/mine.py
+# Your own code: src/katas/k0N_*/mine.py exists already (committed blank; git hides your edits automatically)
 uv run kata list                       # progress
-uv run kata reset k01                  # blank skeleton: write it from scratch   (--from starter = fix the buggy version)
+# just open src/katas/k01_loop/mine.py and write it
 uv run kata test k01                   # run the tests against YOUR file         (-x stops at first failure)
 uv run kata live k05 --runs 3          # katas 5-6: run YOUR file against the real model (--verbose shows tool calls)
 uv run kata diff k01                   # your file vs the reference: look AFTER your attempt
-uv run kata reset k01 --force          # start over (overwrites your file)
+uv run kata reset k01 --force          # wipe your file back to blank (--from starter = the buggy version to fix)
 ```
-`kata reset` refuses to overwrite an existing `mine.py` unless you pass `--force`. Katas 5-6 have no blank form: you edit a copy of the starter.
+The `mine.py` files are committed blank; `kata` marks them `skip-worktree`, so your edits never appear in `git status` and `git add -A` never stages them (if you ever want to commit your work: `git update-index --no-skip-worktree <file>`). `kata reset` refuses to wipe a changed file without `--force`. Katas 5-6 start as a copy of the starter: you edit that.
 Maintainer checks (not for practice): `uv run pytest -q` (starters fail on purpose) and `KATA_IMPL=solution uv run pytest -q`.
 
 **Authentication (katas 5-6).** Either set `ANTHROPIC_API_KEY` in `.env`, or sign in with the `ant` CLI using an *inference* scope

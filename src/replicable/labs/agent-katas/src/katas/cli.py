@@ -1,6 +1,6 @@
 """`kata` - run YOUR implementations of the katas.   uv run kata --help
   kata list                      progress on all katas
-  kata reset k01 [--from blank|starter|solution] [--force]    create/overwrite your mine.py
+  kata reset k01 [--from blank|starter|solution] [--force]    wipe your mine.py back to blank (it already exists)
   kata test k01                  run the kata's tests against your mine.py (katas 1-4)
   kata live k05 [--runs 3]       run your mine.py against the real model (katas 5-6)
   kata diff k01                  your code vs the reference (look AFTER your attempt)
@@ -21,6 +21,13 @@ def resolve(arg: str) -> Path:
 
 def kid(d: Path) -> str: return d.name[:3]
 
+def _blank_source(d: Path) -> Path: return d / "skeleton.py" if (d / "skeleton.py").exists() else d / "starter.py"
+
+def _hide_from_git():
+    """mine.py files are committed blank; tell git to ignore YOUR edits to them (local-only, idempotent, harmless outside git)."""
+    files = [str(p.relative_to(LAB)) for p in PKG.glob("k0*_*/mine.py")]
+    if files: subprocess.run(["git", "update-index", "--skip-worktree", *files], cwd=LAB, capture_output=True)
+
 def _source(d: Path, origin: str) -> Path:
     if origin == "blank" and (d / "skeleton.py").exists(): return d / "skeleton.py"
     if origin == "solution": return d / "solution.py"
@@ -28,14 +35,15 @@ def _source(d: Path, origin: str) -> Path:
 
 def cmd_reset(a):
     d = resolve(a.kata); mine = d / "mine.py"
-    if mine.exists() and not a.force: raise SystemExit(f"{mine.relative_to(LAB)} already exists (your work!). Use --force to overwrite.")
+    if mine.exists() and mine.read_text() != _blank_source(d).read_text() and not a.force:
+        raise SystemExit(f"{mine.relative_to(LAB)} has your changes. Use --force to wipe it back to blank.")
     src = _source(d, a.origin)
     shutil.copyfile(src, mine)
     note = " (peeking at the solution!)" if a.origin == "solution" else ""
-    print(f"created {mine.relative_to(LAB)} from {src.name}{note}\nedit it, then: uv run kata {'live' if kid(d) in LIVE else 'test'} {kid(d)}")
+    print(f"wrote {mine.relative_to(LAB)} from {src.name}{note}\nedit it, then: uv run kata {'live' if kid(d) in LIVE else 'test'} {kid(d)}")
 
 def _need_mine(d: Path):
-    if not (d / "mine.py").exists(): raise SystemExit(f"no mine.py yet: run `uv run kata reset {kid(d)}` first")
+    if not (d / "mine.py").exists(): raise SystemExit(f"{d.name}/mine.py is missing: run `uv run kata reset {kid(d)} --force` to recreate it")
 
 def _pytest(d: Path, quiet=False, extra=()):
     env = {**os.environ, "KATA_IMPL": "mine"}
@@ -65,7 +73,9 @@ def cmd_diff(a):
 def cmd_list(a):
     print(f"{'kata':<24}{'your file':<14}status")
     for d in sorted(PKG.glob("k0*_*")):
-        if not (d / "mine.py").exists(): print(f"{d.name:<24}{'-':<14}not started: uv run kata reset {kid(d)}"); continue
+        mine = d / "mine.py"
+        if not mine.exists() or mine.read_text() == _blank_source(d).read_text():
+            print(f"{d.name:<24}{'blank':<14}not started: edit {mine.relative_to(LAB)}"); continue
         if kid(d) in LIVE: print(f"{d.name:<24}{'mine.py':<14}live: uv run kata live {kid(d)}"); continue
         r = _pytest(d, quiet=True); last = (r.stdout.strip().splitlines() or ["?"])[-1]
         print(f"{d.name:<24}{'mine.py':<14}{'PASS' if r.returncode == 0 else 'FAIL'}  {last}")
@@ -79,7 +89,7 @@ def main(argv=None):
     t = sub.add_parser("test"); t.add_argument("kata"); t.add_argument("-x", "--first", action="store_true", help="stop at first failure"); t.set_defaults(fn=cmd_test)
     l = sub.add_parser("live"); l.add_argument("kata"); l.add_argument("--runs", type=int, default=3); l.add_argument("--verbose", action="store_true"); l.set_defaults(fn=cmd_live)
     sub.add_parser("diff").set_defaults(fn=cmd_diff); sub.choices["diff"].add_argument("kata")
-    a = p.parse_args(argv); a.fn(a)
+    a = p.parse_args(argv); _hide_from_git(); a.fn(a)
 
 if __name__ == "__main__":
     main()

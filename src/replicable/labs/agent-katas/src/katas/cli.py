@@ -1,7 +1,7 @@
 """`kata` - run YOUR implementations of the katas.   uv run kata --help
   kata list                      progress on all katas
   kata reset k01 [--from blank|starter|solution] [--force]    wipe your mine.py back to blank (it already exists)
-  kata test k01                  run the kata's tests against your mine.py (katas 1-4)
+  kata test k01 [--all]          run the kata's tests against your mine.py (katas 1-4); stops at the first failure unless --all
   kata live k05 [--runs 3]       run your mine.py against the real model (katas 5-6)
   kata diff k01                  your code vs the reference (look AFTER your attempt)
 """
@@ -53,7 +53,7 @@ def _pytest(d: Path, quiet=False, extra=()):
 def cmd_test(a):
     d = resolve(a.kata)
     if kid(d) in LIVE: raise SystemExit(f"{kid(d)} needs the real model: use `uv run kata live {kid(d)}`")
-    _need_mine(d); raise SystemExit(_pytest(d, extra=["-x"] if a.first else []).returncode)
+    _need_mine(d); raise SystemExit(_pytest(d, extra=[] if a.all else ["-x"]).returncode)
 
 def cmd_live(a):
     d = resolve(a.kata)
@@ -86,7 +86,7 @@ def main(argv=None):
     sub.add_parser("list").set_defaults(fn=cmd_list)
     r = sub.add_parser("reset"); r.add_argument("kata"); r.add_argument("--from", dest="origin", choices=["blank", "starter", "solution"], default="blank")
     r.add_argument("--force", action="store_true"); r.set_defaults(fn=cmd_reset)
-    t = sub.add_parser("test"); t.add_argument("kata"); t.add_argument("-x", "--first", action="store_true", help="stop at first failure"); t.set_defaults(fn=cmd_test)
+    t = sub.add_parser("test"); t.add_argument("kata"); t.add_argument("-a", "--all", action="store_true", help="show every failing test (default: stop at the first one)"); t.set_defaults(fn=cmd_test)
     l = sub.add_parser("live"); l.add_argument("kata"); l.add_argument("--runs", type=int, default=3); l.add_argument("--verbose", action="store_true"); l.set_defaults(fn=cmd_live)
     sub.add_parser("diff").set_defaults(fn=cmd_diff); sub.choices["diff"].add_argument("kata")
     a = p.parse_args(argv); _hide_from_git(); a.fn(a)

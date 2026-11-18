@@ -12,7 +12,7 @@ cp .env.example .env                   # katas 1-4 need no key; 5-6 call the mod
 # Your own code: src/katas/k0N_*/mine.py exists already (committed blank; git hides your edits automatically)
 uv run kata list                       # progress
 # just open src/katas/k01_loop/mine.py and write it
-uv run kata test k01                   # run the tests against YOUR file         (-x stops at first failure)
+uv run kata test k01                   # run the tests against YOUR file; stops at the first failure (--all = show every failure)
 uv run kata live k05 --runs 3          # katas 5-6: run YOUR file against the real model (--verbose shows tool calls)
 uv run kata diff k01                   # your file vs the reference: look AFTER your attempt
 uv run kata reset k01 --force          # wipe your file back to blank (--from starter = the buggy version to fix)

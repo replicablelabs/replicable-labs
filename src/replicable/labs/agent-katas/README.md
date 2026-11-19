@@ -62,7 +62,7 @@ uv run kata diff k01                   # your mine.py vs the reference: look AFT
 uv run kata reset k01 --force          # wipe mine.py back to blank (--from starter | solution)
 uv run kata reset k01 --target starter --force   # restore the buggy starter.py after you fixed it, to redo it
 ```
-Every command prints the file it used, e.g. `[running k01_loop/mine.py]`. `kata reset` refuses to wipe a file you changed unless you pass `--force`.
+Every command prints the file it used, e.g. `[running k01_loop/mine.py]`. Output is coloured on a terminal (green PASS / red FAIL and errors, cyan tool calls, coloured tracebacks); `NO_COLOR=1` turns it off and `FORCE_COLOR=1` forces it (e.g. when output is piped). `kata reset` refuses to wipe a file you changed unless you pass `--force`.
 
 **The loop to follow:** edit the file, `kata test kNN`, read the one failure, fix that one thing, repeat; when green run `kata test kNN --all` once.
 

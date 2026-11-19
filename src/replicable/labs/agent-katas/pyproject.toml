@@ -3,7 +3,12 @@ name = "agent-katas"
 version = "0.1.0"
 description = "Timed drills for improving an Anthropic tool-use agent (tools, tool logic, prompting)"
 requires-python = ">=3.11"
-dependencies = ["anthropic", "pytest", "python-dotenv"]
+dependencies = [
+    "anthropic",
+    "pytest",
+    "python-dotenv",
+    "rich>=15.0.0",
+]
 
 [project.scripts]
 kata = "katas.cli:main"

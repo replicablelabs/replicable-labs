@@ -8,6 +8,7 @@ k06  run an agent with YOUR system prompt (real model, permissive refund tool)  
 Add --starter / --solution to run those files instead of mine.py."""
 import json, os, sys
 from .loader import load
+from .style import bold, cyan, dim, die, green, red, yellow
 from .world import World
 
 def _clip(x, n=220):
@@ -24,10 +25,10 @@ def _traced(impls):
     """Wrap tool callables so every call and result is printed as it happens."""
     def wrap(name, fn):
         def f(**args):
-            print(f"  -> {name}({_clip(json.dumps(args), 120)})", flush=True)
+            print(cyan(f"  -> {name}({_clip(json.dumps(args), 120)})"), flush=True)
             try: out = fn(**args)
-            except Exception as e: print(f"  <- ERROR {type(e).__name__}: {_clip(e)}", flush=True); raise
-            print(f"  <- {_clip(out)}", flush=True); return out
+            except Exception as e: print(red(f"  <- ERROR {type(e).__name__}: {_clip(e)}"), flush=True); raise
+            print(green(f"  <- {_clip(out)}"), flush=True); return out
         return f
     return {n: wrap(n, fn) for n, fn in impls.items()}
 
@@ -38,8 +39,8 @@ def _agent_run(run_agent, question, schemas, system, enforce=True):
     try:
         r = run_agent(question, _client(), schemas, _traced(impls(world, enforce)), system=system, max_steps=8)
     except NotImplementedError:
-        raise SystemExit("your run_agent is not implemented yet (it still raises NotImplementedError).")
-    print(f"\nANSWER: {r.answer}\n(steps={r.steps}, stop={r.stop})")
+        die("your run_agent is not implemented yet (it still raises NotImplementedError).")
+    print(f"\n{bold('ANSWER:')} {r.answer}\n" + dim(f"(steps={r.steps}, stop={r.stop})"))
     if world.refunds: print(f"refunds recorded: {world.refunds}")
 
 SHOP_SYSTEM = "You are a customer-support agent for an online shop. Use the tools to help the customer."
@@ -52,21 +53,21 @@ def run(kata_dir: str, impl: str, args: list[str]):
     elif k == "k02":
         oid = args[0] if args else "1005"
         try: out = m.lookup_order(World(), oid)
-        except NotImplementedError: raise SystemExit("your lookup_order is not implemented yet.")
+        except NotImplementedError: die("your lookup_order is not implemented yet.")
         print(f"lookup_order(order_id={oid!r}) returned {len(out)} characters:\n\n{out}")
     elif k == "k03":
         oid, amount = (args + ["1001", "10"])[:2]
         w = World()
         try: content, err = m.issue_refund(w, oid, float(amount), "demo")
-        except NotImplementedError: raise SystemExit("your issue_refund is not implemented yet.")
-        except KeyError as e: raise SystemExit(f"your issue_refund raised KeyError({e}): it crashed instead of returning an error for the model.")
+        except NotImplementedError: die("your issue_refund is not implemented yet.")
+        except KeyError as e: die(f"your issue_refund raised KeyError({e}): it crashed instead of returning an error for the model.")
         print(f"issue_refund({oid!r}, {amount}) -> is_error={err}\n{content}\nrefunds recorded: {w.refunds or 'none'}")
     elif k == "k04":
         text = " ".join(args) or "I was charged twice for my order and I need this fixed today."
         model = os.environ.get("KATA_K04_MODEL", "claude-haiku-5-5")   # forced tool_choice is rejected by Sonnet/Opus/Fable 5.x
         print(f"(model: {model}; forced tool_choice is only accepted by some models)")
         try: print(f"ticket: {text}\n-> {m.classify_ticket(_client(), text, model=model)}")
-        except NotImplementedError: raise SystemExit("your classify_ticket is not implemented yet.")
+        except NotImplementedError: die("your classify_ticket is not implemented yet.")
     elif k == "k05":
         from .k01_loop.solution import run_agent
         _agent_run(run_agent, " ".join(args) or "Where is order #1002?", m.SCHEMAS, m.SYSTEM)

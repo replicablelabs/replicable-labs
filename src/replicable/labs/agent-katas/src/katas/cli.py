@@ -11,15 +11,17 @@
 import argparse, difflib, os, re, shutil, subprocess, sys
 from pathlib import Path
 
+from .style import bold, cyan, dim, die, green, pretty_tracebacks, red
+
 PKG = Path(__file__).resolve().parent
 LAB = PKG.parents[1]
 LIVE = {"k05", "k06"}
 
 def resolve(arg: str) -> Path:
     m = re.fullmatch(r"k?0*(\d+)", arg.strip().lower())
-    if not m: raise SystemExit(f"unknown kata {arg!r}; use k01..k06")
+    if not m: die(f"unknown kata {arg!r}; use k01..k06")
     hits = sorted(PKG.glob(f"k{int(m.group(1)):02d}_*"))
-    if not hits: raise SystemExit(f"no such kata {arg!r}; use k01..k06")
+    if not hits: die(f"no such kata {arg!r}; use k01..k06")
     return hits[0]
 
 def kid(d: Path) -> str: return d.name[:3]
@@ -46,37 +48,38 @@ def cmd_reset(a):
     if a.target == "starter":      # restore the buggy starter.py to its committed state (after you fixed it and want to redo it)
         dest = d / "starter.py"
         if dest.read_text() != _pristine(dest) and not a.force:
-            raise SystemExit(f"{dest.relative_to(LAB)} has your changes. Use --force to restore the original buggy version.")
+            die(f"{dest.relative_to(LAB)} has your changes. Use --force to restore the original buggy version.")
         dest.write_text(_pristine(dest)); print(f"restored {dest.relative_to(LAB)} to the original buggy version"); return
     dest = d / "mine.py"
     src = _source(d, a.origin)
     text = src.read_text() if a.origin == "solution" else _pristine(src)
     if dest.exists() and dest.read_text() != _pristine(_blank_source(d)) and not a.force:
-        raise SystemExit(f"{dest.relative_to(LAB)} has your changes. Use --force to wipe it back to blank.")
+        die(f"{dest.relative_to(LAB)} has your changes. Use --force to wipe it back to blank.")
     dest.write_text(text)
     note = " (peeking at the solution!)" if a.origin == "solution" else ""
     print(f"wrote {dest.relative_to(LAB)} from {src.name}{note}\nedit it, then: uv run kata {'live' if kid(d) in LIVE else 'test'} {kid(d)}")
 
 def _need_mine(d: Path):
-    if not (d / "mine.py").exists(): raise SystemExit(f"{d.name}/mine.py is missing: run `uv run kata reset {kid(d)} --force` to recreate it")
+    if not (d / "mine.py").exists(): die(f"{d.name}/mine.py is missing: run `uv run kata reset {kid(d)} --force` to recreate it")
 
 def _pytest(d: Path, quiet=False, extra=(), impl="mine"):
     env = {**os.environ, "KATA_IMPL": impl}
-    cmd = [sys.executable, "-m", "pytest", str(LAB / "tests" / f"test_{kid(d)}.py"), "-q", "--no-header", *extra]
+    color = "no" if quiet else ("yes" if (sys.stdout.isatty() or os.environ.get("FORCE_COLOR")) and not os.environ.get("NO_COLOR") else "no")
+    cmd = [sys.executable, "-m", "pytest", str(LAB / "tests" / f"test_{kid(d)}.py"), "-q", "--no-header", f"--color={color}", *extra]
     return subprocess.run(cmd, env=env, cwd=LAB, capture_output=quiet, text=True)
 
 def cmd_test(a):
     d = resolve(a.kata)
-    if kid(d) in LIVE: raise SystemExit(f"{kid(d)} needs the real model: use `uv run kata live {kid(d)}`")
+    if kid(d) in LIVE: die(f"{kid(d)} needs the real model: use `uv run kata live {kid(d)}`")
     if a.impl == "mine": _need_mine(d)
-    print(f"[running {d.name}/{a.impl}.py]", flush=True)
+    print(dim(f"[running {d.name}/{a.impl}.py]"), flush=True)
     raise SystemExit(_pytest(d, extra=[] if a.all else ["-x"], impl=a.impl).returncode)
 
 def cmd_live(a):
     d = resolve(a.kata)
-    if kid(d) not in LIVE: raise SystemExit(f"{kid(d)} is checked by tests: use `uv run kata test {kid(d)}`")
+    if kid(d) not in LIVE: die(f"{kid(d)} is checked by tests: use `uv run kata test {kid(d)}`")
     if a.impl == "mine": _need_mine(d)
-    print(f"[running {d.name}/{a.impl}.py]", flush=True)
+    print(dim(f"[running {d.name}/{a.impl}.py]"), flush=True)
     if not (os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_PROFILE")):
         print("note: neither ANTHROPIC_API_KEY nor ANTHROPIC_PROFILE is set (e.g. `export ANTHROPIC_PROFILE=dev`)", file=sys.stderr)
     from .live import main as live_main
@@ -85,7 +88,7 @@ def cmd_live(a):
 def cmd_run(a):
     d = resolve(a.kata)
     if a.impl == "mine": _need_mine(d)
-    print(f"[running {d.name}/{a.impl}.py]", flush=True)
+    print(dim(f"[running {d.name}/{a.impl}.py]"), flush=True)
     from .run import run
     run(d.name, a.impl, a.args)
 
@@ -100,10 +103,10 @@ def cmd_list(a):
     for d in sorted(PKG.glob("k0*_*")):
         mine = d / "mine.py"
         if not mine.exists() or mine.read_text() == _pristine(_blank_source(d)):
-            print(f"{d.name:<24}{'blank':<14}not started: edit {mine.relative_to(LAB)}"); continue
+            print(f"{d.name:<24}{'blank':<14}" + dim(f"not started: edit {mine.relative_to(LAB)}")); continue
         if kid(d) in LIVE: print(f"{d.name:<24}{'mine.py':<14}live: uv run kata live {kid(d)}"); continue
         r = _pytest(d, quiet=True); last = (r.stdout.strip().splitlines() or ["?"])[-1]
-        print(f"{d.name:<24}{'mine.py':<14}{'PASS' if r.returncode == 0 else 'FAIL'}  {last}")
+        print(f"{d.name:<24}{'mine.py':<14}" + (green("PASS") if r.returncode == 0 else red("FAIL")) + f"  {last}")
 
 def main(argv=None):
     p = argparse.ArgumentParser(prog="kata", description="Run your own implementations of the agent katas.")
@@ -122,7 +125,7 @@ def main(argv=None):
     l = sub.add_parser("live"); l.add_argument("kata"); impl_flags(l); l.add_argument("--runs", type=int, default=3); l.add_argument("--verbose", action="store_true"); l.set_defaults(fn=cmd_live)
     u = sub.add_parser("run"); u.add_argument("kata"); u.add_argument("args", nargs="*", help="kata-specific input, e.g. a question or an order id"); impl_flags(u); u.set_defaults(fn=cmd_run)
     sub.add_parser("diff").set_defaults(fn=cmd_diff); sub.choices["diff"].add_argument("kata")
-    a = p.parse_args(argv); _hide_from_git(); a.fn(a)
+    a = p.parse_args(argv); pretty_tracebacks(); _hide_from_git(); a.fn(a)
 
 if __name__ == "__main__":
     main()

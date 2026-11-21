@@ -100,6 +100,28 @@ def test_every_status_a_tool_returns_is_documented(tool, args, status):
     assert f'"{status}"' in TOOLS[tool].to_dict()["description"]
 
 
+def test_every_status_in_the_contract_is_documented_by_some_tool():
+    from typing import get_args
+
+    from katas.k00_free.results import Status
+
+    descriptions = " ".join(s["description"] for s in SCHEMAS)
+    for status in get_args(Status):
+        assert f'"{status}"' in descriptions, status
+
+
+def test_tools_must_return_a_result_model():
+    from katas.k00_free.tools.base import tool
+
+    @tool
+    def bad() -> str:
+        """Returns a plain dict-like string instead of a model."""
+        return "{}"
+
+    with pytest.raises(AssertionError):
+        bad.call({})
+
+
 @pytest.mark.parametrize("tool,key", [("find_card", "matches"), ("list_cards", "cards")])
 def test_list_results_name_their_key_in_the_description(tool, key):
     from katas.k00_free.tools import TOOLS

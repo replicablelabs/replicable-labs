@@ -1,13 +1,11 @@
-import json
-
-from anthropic import beta_tool
-
 from ... import db
+from ...results import CardView, Result
 from ...utils.utils import ToolError
+from ..base import tool
 
 
-@beta_tool
-def delete_card(id: str = "", title: str = "") -> str:
+@tool
+def delete_card(id: str = "", title: str = "") -> Result:
     """Delete a card permanently.
 
     There is no undo. Be sure which card the user means before calling it.
@@ -27,8 +25,9 @@ def delete_card(id: str = "", title: str = "") -> str:
         title: The card's title. Case-insensitive, otherwise exact.
 
     Returns:
-        A JSON string. Its shape is described in the bullets above, which are
-        the only part of this docstring the model sees besides Args.
+        A `Result` (see results.py), which @tool serialises to the JSON string
+        the model reads. Its shape is described in the bullets above, the only
+        part of this docstring besides Args that the model sees.
 
     Raises:
         ToolError: Neither id nor title was given. run_tool turns it into an
@@ -38,10 +37,5 @@ def delete_card(id: str = "", title: str = "") -> str:
         raise ToolError("Provide the card's id or title.")
     card = db.delete_card(id, title)
     if card is None:
-        return json.dumps(
-            {
-                "status": "not_found",
-                "message": "No card matches. If both id and title are given they must refer to the same card.",
-            }
-        )
-    return json.dumps({"status": "deleted", "card": {"id": card.id, "title": card.title}})
+        return Result.not_found()
+    return Result(status="deleted", card=CardView.brief(card))

@@ -1,12 +1,10 @@
-import json
-
-from anthropic import beta_tool
-
 from ... import db
+from ...results import CardView, Cards
+from ..base import tool
 
 
-@beta_tool
-def list_cards() -> str:
+@tool
+def list_cards() -> Cards:
     """List all the existing cards.
 
     Takes no arguments. Use it to see what cards exist, to find a card's [id]
@@ -19,7 +17,8 @@ def list_cards() -> str:
     - to search by words instead of reading the whole list, use [find_card]
 
     Returns:
-        A JSON string. Its shape is described in the bullets above, which are
-        the only part of this docstring the model sees.
+        A `Cards` (see results.py), which @tool serialises to the JSON string
+        the model reads. Its shape is described in the bullets above, the only
+        part of this docstring that the model sees.
     """
-    return json.dumps({"cards": [{"id": c.id, "title": c.title} for c in db.list_cards()]})
+    return Cards(cards=[CardView.brief(c) for c in db.list_cards()])

@@ -1,14 +1,13 @@
-import json
 from datetime import datetime
 
-from anthropic import beta_tool
-
 from ... import db
+from ...results import CardView, Result
 from ...utils.utils import ToolError
+from ..base import tool
 
 
-@beta_tool
-def schedule_card(scheduled_at: str, id: str = "", title: str = "") -> str:
+@tool
+def schedule_card(scheduled_at: str, id: str = "", title: str = "") -> Result:
     """Schedule a card for study.
 
     Sets the date and time at which the user should study the card.
@@ -28,8 +27,9 @@ def schedule_card(scheduled_at: str, id: str = "", title: str = "") -> str:
         title: The card's title. Case-insensitive, otherwise exact.
 
     Returns:
-        A JSON string. Its shape is described in the bullets above, which are
-        the only part of this docstring the model sees besides Args.
+        A `Result` (see results.py), which @tool serialises to the JSON string
+        the model reads. Its shape is described in the bullets above, the only
+        part of this docstring besides Args that the model sees.
 
     Raises:
         ToolError: Neither id nor title was given, or scheduled_at is not an
@@ -46,16 +46,9 @@ def schedule_card(scheduled_at: str, id: str = "", title: str = "") -> str:
 
     card = db.find_card(id, title)
     if card is None:
-        return json.dumps(
-            {
-                "status": "not_found",
-                "message": "No card matches. If both id and title are given they must refer to the same card.",
-            }
-        )
+        return Result.not_found()
     card = db.set_schedule(card.id, when.isoformat())
-    return json.dumps(
-        {
-            "status": "scheduled",
-            "card": {"id": card.id, "title": card.title, "scheduled_at": card.scheduled_at},
-        }
+    return Result(
+        status="scheduled",
+        card=CardView(id=card.id, title=card.title, scheduled_at=card.scheduled_at),
     )

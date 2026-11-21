@@ -1,12 +1,10 @@
-import json
-
-from anthropic import beta_tool
-
 from ... import db
+from ...results import CardView, Result
+from ..base import tool
 
 
-@beta_tool
-def create_card(title: str, content: str, replace: bool = False) -> str:
+@tool
+def create_card(title: str, content: str, replace: bool = False) -> Result:
     """Create a new card.
 
     A card has a [title] and [content]. The card's [id] is assigned
@@ -27,15 +25,16 @@ def create_card(title: str, content: str, replace: bool = False) -> str:
         replace: Set to true only after the user agreed to replace the existing card with this title.
 
     Returns:
-        A JSON string. Its shape is described in the bullets above, which are
-        the only part of this docstring the model sees besides Args.
+        A `Result` (see results.py), which @tool serialises to the JSON string
+        the model reads. Its shape is described in the bullets above, the only
+        part of this docstring besides Args that the model sees.
     """
     existing = db.get_card_by_title(title)
     if existing is None:
         card = db.add_card(title, content)
-        return json.dumps({"status": "created", "card": card.to_dict()})
+        return Result(status="created", card=CardView.full(card))
     if not replace:
         # Not an error: the model must ask the user, then call again with replace=true.
-        return json.dumps({"status": "exists", "card": existing.to_dict()})
+        return Result(status="exists", card=CardView.full(existing))
     card = db.update_card(existing.id, content)
-    return json.dumps({"status": "replaced", "card": card.to_dict()})
+    return Result(status="replaced", card=CardView.full(card))

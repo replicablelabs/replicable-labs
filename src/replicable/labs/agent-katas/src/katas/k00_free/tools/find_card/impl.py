@@ -1,13 +1,11 @@
-import json
-
-from anthropic import beta_tool
-
 from ... import db
+from ...results import Match, Matches
 from ...utils.utils import ToolError
+from ..base import tool
 
 
-@beta_tool
-def find_card(id: str = "", title: str = "", content: str = "") -> str:
+@tool
+def find_card(id: str = "", title: str = "", content: str = "") -> Matches:
     """Find cards by approximate match.
 
     Use it when you don't know the exact [id] or [title], for example when the
@@ -29,8 +27,9 @@ def find_card(id: str = "", title: str = "", content: str = "") -> str:
         content: Words from the card's content.
 
     Returns:
-        A JSON string. Its shape is described in the bullets above, which are
-        the only part of this docstring the model sees besides Args.
+        A `Matches` (see results.py), which @tool serialises to the JSON string
+        the model reads. Its shape is described in the bullets above, the only
+        part of this docstring besides Args that the model sees.
 
     Raises:
         ToolError: None of id, title or content was given. run_tool turns it
@@ -40,13 +39,13 @@ def find_card(id: str = "", title: str = "", content: str = "") -> str:
     if not id and not query:
         raise ToolError("Provide at least one of id, title or content.")
 
-    matches = []
+    matches: list[Match] = []
     if id:
         by_id = db.get_card_by_id(id)
         if by_id is not None:
-            matches.append({"id": by_id.id, "title": by_id.title, "score": 1.0})
+            matches.append(Match(id=by_id.id, title=by_id.title, score=1.0))
     for card in db.fuzzy_search_cards(query) if query else []:
-        if not any(m["id"] == card.id for m in matches):
-            matches.append({"id": card.id, "title": card.title, "score": card.score})
+        if not any(m.id == card.id for m in matches):
+            matches.append(Match(id=card.id, title=card.title, score=card.score))
     # An empty list is a normal answer, not an error.
-    return json.dumps({"matches": matches})
+    return Matches(matches=matches)

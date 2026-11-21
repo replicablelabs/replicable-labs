@@ -10,14 +10,29 @@ from ...utils.utils import ToolError
 def get_card(id: str = "", title: str = "") -> str:
     """Get one card by its exact id or exact title.
 
-    - get card based on a [title] or on an [id]; provide at least one, and if you provide both they must belong to the same card
-    - use [list_cards] if you couldn't find a card with that [title] or [id]
-    - matches are **exact matches**
-    - you can also use [find_card] if you couldn't find exact matches
+    Returns the full card, including its content. Use it when you already know
+    which card the user means; it does not search.
+
+    - provide [id], [title] or both; if you provide both they must belong to the same card
+    - title matching ignores letter case but must otherwise be an **exact match**
+    - use [find_card] if you only know part of the title or something from the content
+    - use [list_cards] to see every card, e.g. when you couldn't find a card with that [title] or [id]
+    - read-only: it never changes a card
+    - returns status "found" with the card ([id], [title], [content] and [scheduled_at] if the card is scheduled), or status "not_found" with a message; not found is a normal answer, not an error
+    - an error result means neither [id] nor [title] was given; call again with one of them
+    - examples: [id] "2"; [title] "Buy milk"; [id] "1" together with [title] "Buy milk" (only if they are the same card)
 
     Args:
-        id: The card's UID.
-        title: The card's name.
+        id: The card's UID, as returned by list_cards, find_card or create_card.
+        title: The card's title. Case-insensitive, otherwise exact.
+
+    Returns:
+        A JSON string. Its shape is described in the bullets above, which are
+        the only part of this docstring the model sees besides Args.
+
+    Raises:
+        ToolError: Neither id nor title was given. run_tool turns it into an
+            is_error tool_result.
     """
     if not id and not title:
         raise ToolError("Provide the card's id or title.")

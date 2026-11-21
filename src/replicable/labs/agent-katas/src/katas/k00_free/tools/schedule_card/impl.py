@@ -11,14 +11,29 @@ from ...utils.utils import ToolError
 def schedule_card(scheduled_at: str, id: str = "", title: str = "") -> str:
     """Schedule a card for study.
 
+    Sets the date and time at which the user should study the card.
+
     - find the card by [id] or by [title]; provide at least one, and if you provide both they must belong to the same card
-    - assign a datetime to the card by providing [scheduled_at] in ISO 8601 format, e.g. 2026-11-25T09:00
-    - scheduling a card again replaces its previous datetime
+    - assign a datetime to the card by providing [scheduled_at] in ISO 8601 format, e.g. 2026-11-25T09:00 (no timezone means the user's local time)
+    - convert relative wording such as "tomorrow at 9" into an absolute datetime first; if you don't know today's date, ask the user instead of guessing
+    - a card has one schedule: scheduling it again replaces its previous datetime
+    - writes data: it changes only the card's schedule, never its title or content
+    - returns status "scheduled" with the card's [id], [title] and [scheduled_at], or status "not_found" with a message; not found is a normal answer, not an error
+    - an error result means no [id] or [title] was given, or [scheduled_at] is not a valid ISO 8601 datetime; fix the argument and call again
+    - examples: [id] "1" with [scheduled_at] "2026-11-25T09:00"; [title] "Buy milk" with [scheduled_at] "2026-12-01"
 
     Args:
         scheduled_at: When to study the card, ISO 8601, e.g. 2026-11-25T09:00.
         id: The card's UID.
-        title: The card's name.
+        title: The card's title. Case-insensitive, otherwise exact.
+
+    Returns:
+        A JSON string. Its shape is described in the bullets above, which are
+        the only part of this docstring the model sees besides Args.
+
+    Raises:
+        ToolError: Neither id nor title was given, or scheduled_at is not an
+            ISO 8601 datetime. run_tool turns it into an is_error tool_result.
     """
     if not id and not title:
         raise ToolError("Provide the card's id or title.")

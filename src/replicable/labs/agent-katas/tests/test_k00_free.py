@@ -78,6 +78,37 @@ def test_tool_definitions_come_from_docstrings():
         assert set(schema["input_schema"].get("required", [])) == required, name
 
 
+@pytest.mark.parametrize(
+    "tool,args,status",
+    [
+        ("create_card", dict(title="New", content="x"), "created"),
+        ("create_card", dict(title="Buy milk", content="x"), "exists"),
+        ("create_card", dict(title="Buy milk", content="x", replace=True), "replaced"),
+        ("get_card", dict(id="1"), "found"),
+        ("get_card", dict(id="99"), "not_found"),
+        ("delete_card", dict(id="1"), "deleted"),
+        ("delete_card", dict(id="99"), "not_found"),
+        ("schedule_card", dict(id="1", scheduled_at="2026-11-25T09:00"), "scheduled"),
+        ("schedule_card", dict(id="99", scheduled_at="2026-11-25T09:00"), "not_found"),
+    ],
+)
+def test_every_status_a_tool_returns_is_documented(tool, args, status):
+    from katas.k00_free.tools import TOOLS
+
+    out, err = call(tool, **args)
+    assert not err and out["status"] == status
+    assert f'"{status}"' in TOOLS[tool].to_dict()["description"]
+
+
+@pytest.mark.parametrize("tool,key", [("find_card", "matches"), ("list_cards", "cards")])
+def test_list_results_name_their_key_in_the_description(tool, key):
+    from katas.k00_free.tools import TOOLS
+
+    out, err = call(tool, **({"title": "milk"} if tool == "find_card" else {}))
+    assert not err and key in out
+    assert f"[{key}]" in TOOLS[tool].to_dict()["description"]
+
+
 def test_list_cards():
     out, err = call("list_cards")
     assert not err and [c["id"] for c in out["cards"]] == ["1", "2", "3"]

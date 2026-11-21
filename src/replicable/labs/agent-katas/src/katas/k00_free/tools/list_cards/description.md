@@ -1,0 +1,1 @@
+- List all the existing cards, showing their [ID] and [title]

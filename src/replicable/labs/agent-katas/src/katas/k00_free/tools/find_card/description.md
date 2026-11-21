@@ -1,0 +1,3 @@
+- find cards by approximate match on the card's [title] or [content], or by [id]; provide at least one
+- returns the best matches first, each with its [id], [title] and a [score] between 0 and 1; an empty list means nothing matched
+- if you know the card's [id] or its exact [title], use [get_card] instead

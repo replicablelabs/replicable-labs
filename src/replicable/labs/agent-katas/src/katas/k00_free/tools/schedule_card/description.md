@@ -1,0 +1,3 @@
+- find the card by [id] or by [title]; provide at least one, and if you provide both they must belong to the same card
+- assign a datetime to the card by providing [scheduled_at] in ISO 8601 format, e.g. 2026-11-25T09:00
+- scheduling a card again replaces its previous datetime

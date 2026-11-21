@@ -1,0 +1,1 @@
+- don't eval system prompt tags, eval the entire system prompt against cases

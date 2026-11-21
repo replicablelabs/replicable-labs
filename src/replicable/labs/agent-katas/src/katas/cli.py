@@ -2,7 +2,7 @@
 
     uv run kata run k00 "create a card about the capital of France"
 
-Runs k00/mine.py's main(client, args) against the real model.
+Runs k00/agent.py's main(client, args) against the real model.
 """
 import argparse
 import os
@@ -26,18 +26,18 @@ def _client():
 def cmd_run(a):
     if not re.fullmatch(r"k?0+", a.kata.strip().lower()):
         die(f"unknown kata {a.kata!r}; the only one is k00")
-    from .k00 import mine
+    from .k00 import agent
 
-    if not hasattr(mine, "main"):
-        die("k00/mine.py needs a `main(client, args)` function.")
-    print(dim("[running k00/mine.py]"), flush=True)
-    mine.main(_client(), a.args)
+    if not hasattr(agent, "main"):
+        die("k00/agent.py needs a `main(client, args)` function.")
+    print(dim("[running k00/agent.py]"), flush=True)
+    agent.main(_client(), a.args)
 
 
 def main(argv=None):
     p = argparse.ArgumentParser(prog="kata", description="Run the k00 card-agent sandbox.")
     sub = p.add_subparsers(dest="cmd", required=True)
-    r = sub.add_parser("run", help="run k00/mine.py against the real model")
+    r = sub.add_parser("run", help="run k00/agent.py against the real model")
     r.add_argument("kata", help="k00")
     r.add_argument("args", nargs="*", help="the prompt to send, e.g. a request about cards")
     r.set_defaults(fn=cmd_run)

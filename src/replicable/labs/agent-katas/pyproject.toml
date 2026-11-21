@@ -17,5 +17,9 @@ kata = "katas.cli:main"
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[tool.pytest.ini_options]
+testpaths = ["src/katas"]
+addopts = "--import-mode=importlib"
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/katas"]

@@ -40,7 +40,7 @@ Notes from the k00 exercise. Tools are the agent's hands: the model only knows w
 
 ```
 k00/
-  mine.py              entry point: `uv run kata run k00 "prompt"`; passes SCHEMAS to messages.create
+  agent.py              entry point: `uv run kata run k00 "prompt"`; passes SCHEMAS to messages.create
   prompts/system.md    system prompt (policy: roles, rules, user-facing output format)
   tools/
     __init__.py        registry: TOOLS, SCHEMAS, run_tool(name, input) -> (content, is_error)

@@ -28,10 +28,10 @@ The default `ant` login only has `org:admin`, which the API rejects for inferenc
 
 ```bash
 uv run kata run k00 "create a card about the capital of France, then schedule it for tomorrow at 9"
-uv run pytest tests/test_k00.py -q     # unit tests for the db and the tools (no API key needed)
+uv run pytest src/katas/k00 -q         # unit tests for the db and the tools (no API key needed)
 ```
 
-`kata run k00` calls `main(client, args)` in `src/katas/k00/mine.py`. Output is coloured on a terminal
+`kata run k00` calls `main(client, args)` in `src/katas/k00/agent.py`. Output is coloured on a terminal
 (`NO_COLOR` disables it, `FORCE_COLOR` forces it).
 
 ## Layout
@@ -40,7 +40,7 @@ uv run pytest tests/test_k00.py -q     # unit tests for the db and the tools (no
 src/katas/
   cli.py, style.py     the `kata run` command and colour helpers
   k00/
-    mine.py            entry point: the request you send to the model, the tool loop
+    agent.py            entry point: the request you send to the model, the tool loop
     prompts/system.md  system prompt
     tools/             one module per tool; each @tool docstring is the tool definition
       schemas.py       pydantic contract for tool results
@@ -48,7 +48,13 @@ src/katas/
     db/                in-memory card store (models, store, search, seed)
     utils/             ToolError, helpers
     docs/              notes: tool design, system prompt checklist, evals
-tests/test_k00.py      db behaviour, tool results, and checks that each tool definition matches its code
+    tests/             no API key needed
+      conftest.py      fresh db per test, `call` fixture for running a tool
+      db/              store (ids, reset, delete) and search
+      tools/           one file per tool, or per group of read-only tools, plus the tool runner
+      test_schemas.py  each tool definition matches its code
 ```
+
+Run one area with e.g. `uv run pytest src/katas/k00/tests/tools/test_create_card.py`.
 
 Start with `src/katas/k00/docs/tool_design.md`: it explains the layout and the tool conventions in detail.

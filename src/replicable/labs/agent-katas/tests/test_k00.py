@@ -1,11 +1,11 @@
-"""Tests for the k00_free sandbox: the db package and the card tools."""
+"""Tests for the k00 sandbox: the db package and the card tools."""
 
 import json
 
 import pytest
 
-from katas.k00_free import db
-from katas.k00_free.tools import SCHEMAS, run_tool
+from katas.k00 import db
+from katas.k00.tools import SCHEMAS, run_tool
 
 
 @pytest.fixture(autouse=True)
@@ -60,7 +60,7 @@ def test_fuzzy_search_ranks_and_scores():
 
 def test_tool_definitions_come_from_docstrings():
     import inspect
-    from katas.k00_free.tools import TOOLS
+    from katas.k00.tools import TOOLS
 
     assert len(SCHEMAS) == len(TOOLS) == 6
     for name, tool in TOOLS.items():
@@ -93,7 +93,7 @@ def test_tool_definitions_come_from_docstrings():
     ],
 )
 def test_every_status_a_tool_returns_is_documented(tool, args, status):
-    from katas.k00_free.tools import TOOLS
+    from katas.k00.tools import TOOLS
 
     out, err = call(tool, **args)
     assert not err and out["status"] == status
@@ -103,7 +103,7 @@ def test_every_status_a_tool_returns_is_documented(tool, args, status):
 def test_every_status_in_the_contract_is_documented_by_some_tool():
     from typing import get_args
 
-    from katas.k00_free.tools.schemas import Status
+    from katas.k00.tools.schemas import Status
 
     descriptions = " ".join(s["description"] for s in SCHEMAS)
     for status in get_args(Status):
@@ -111,7 +111,7 @@ def test_every_status_in_the_contract_is_documented_by_some_tool():
 
 
 def test_tools_must_return_a_result_model():
-    from katas.k00_free.tools.base import tool
+    from katas.k00.tools.base import tool
 
     @tool
     def bad() -> str:
@@ -124,7 +124,7 @@ def test_tools_must_return_a_result_model():
 
 @pytest.mark.parametrize("tool", ["find_card", "list_cards"])
 def test_list_results_name_their_key_in_the_description(tool):
-    from katas.k00_free.tools import TOOLS
+    from katas.k00.tools import TOOLS
 
     out, err = call(tool, **({"title": "milk"} if tool == "find_card" else {}))
     assert not err and "cards" in out

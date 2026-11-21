@@ -34,10 +34,12 @@ Notes from the k00 exercise. Tools are the agent's hands: the model only knows w
 
 16. **Don't repeat result statuses in the system prompt.** The prompt says what the user should see ("ask before replacing a card"); the tool description says which status triggers it. Then renaming a status can't silently break the prompt. Recheck both whenever either changes.
 
+17. **Return an object, even for a list.** Wrap lists as `{"cards": [...]}` (`CardList`), not a bare `[...]`. Every result then has the same shape, an empty result is explicit (`{"cards": []}`), and you can add `total` or `truncated` later without changing the contract.
+
 ## Repo layout
 
 ```
-k00_free/
+k00/
   mine.py              entry point: `uv run kata run k00 "prompt"`; passes SCHEMAS to messages.create
   prompts/system.md    system prompt (policy: roles, rules, user-facing output format)
   tools/
@@ -51,7 +53,7 @@ k00_free/
   docs/                these notes: tool design, system prompt checklist, evals
 ```
 
-Tests live outside this folder, in the lab's `tests/test_k00_free.py` (run `uv run pytest tests/test_k00_free.py` from `src/replicable/labs/agent-katas`): db behaviour, tool results, and a check that each definition matches its signature and docstring.
+Tests live outside this folder, in the lab's `tests/test_k00.py` (run `uv run pytest tests/test_k00.py` from `src/replicable/labs/agent-katas`): db behaviour, tool results, and a check that each definition matches its signature and docstring.
 
 ## Defining tools from docstrings (`@beta_tool`)
 

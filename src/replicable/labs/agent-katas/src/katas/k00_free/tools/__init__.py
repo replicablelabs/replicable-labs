@@ -1,7 +1,8 @@
-"""Tool registry: every card tool's schema, plus `run_tool` to execute one call.
+"""Tool registry: every card tool's definition, plus `run_tool` to execute one call.
 
-Each tool is a sub-package with `schema.py` (the dict sent to the API),
-`description.md` (its text) and `impl.py` (a function named like the tool).
+Each tool is a sub-package whose `impl.py` holds one `@beta_tool` function named
+like the tool. Its name, description and input schema all come from that
+function's signature and docstring.
 """
 
 import json
@@ -9,14 +10,12 @@ import json
 from ..utils.utils import ToolError
 from . import create_card, delete_card, find_card, get_card, list_cards, schedule_card
 
-TOOLS = [create_card, delete_card, find_card, get_card, list_cards, schedule_card]
+_PACKAGES = [create_card, delete_card, find_card, get_card, list_cards, schedule_card]
 
-SCHEMAS = [tool.schema.schema for tool in TOOLS]
+# name -> decorated tool object (has .to_dict(), .call(), .func)
+TOOLS = {pkg.__name__.rsplit(".", 1)[-1]: getattr(pkg.impl, pkg.__name__.rsplit(".", 1)[-1]) for pkg in _PACKAGES}
 
-_IMPLS = {
-    tool.schema.schema["name"]: getattr(tool.impl, tool.schema.schema["name"])
-    for tool in TOOLS
-}
+SCHEMAS = [tool.to_dict() for tool in TOOLS.values()]
 
 
 def run_tool(name: str, tool_input: dict) -> tuple[str, bool]:
@@ -24,14 +23,14 @@ def run_tool(name: str, tool_input: dict) -> tuple[str, bool]:
 
     Never raises: a bad call becomes an error result the model can read and retry.
     """
-    impl = _IMPLS.get(name)
-    if impl is None:
-        return f"Unknown tool {name!r}. Available: {', '.join(_IMPLS)}.", True
+    tool = TOOLS.get(name)
+    if tool is None:
+        return f"Unknown tool {name!r}. Available: {', '.join(TOOLS)}.", True
     try:
-        return json.dumps(impl(**tool_input)), False
+        return tool.call(tool_input), False
     except ToolError as e:
         return str(e), True
-    except TypeError as e:
+    except (TypeError, ValueError) as e:
         return f"Invalid arguments for {name}: {e}", True
     except Exception as e:  # a crashing tool must not kill the loop
         return f"{name} failed: {type(e).__name__}: {e}", True

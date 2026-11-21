@@ -58,17 +58,24 @@ def test_fuzzy_search_ranks_and_scores():
 
 # ---- tools ----
 
-def test_every_schema_matches_its_impl():
+def test_tool_definitions_come_from_docstrings():
     import inspect
-    from katas.k00_free.tools import _IMPLS
+    from katas.k00_free.tools import TOOLS
 
-    for schema in SCHEMAS:
-        params = inspect.signature(_IMPLS[schema["name"]]).parameters
-        props = set(schema["input_schema"]["properties"])
-        assert props == set(params), schema["name"]
-        for req in schema["input_schema"]["required"]:
-            assert req in params
-        assert schema["description"], schema["name"]
+    assert len(SCHEMAS) == len(TOOLS) == 6
+    for name, tool in TOOLS.items():
+        schema = tool.to_dict()
+        assert schema["name"] == name
+        assert schema["description"].strip(), name
+        params = inspect.signature(tool.func).parameters
+        props = schema["input_schema"].get("properties", {})
+        assert set(props) == set(params), name
+        # Every parameter is documented in the docstring's Args section.
+        for pname, prop in props.items():
+            assert prop.get("description"), f"{name}.{pname} has no Args entry"
+        # Parameters without a default are exactly the required ones.
+        required = {p for p, v in params.items() if v.default is inspect.Parameter.empty}
+        assert set(schema["input_schema"].get("required", [])) == required, name
 
 
 def test_list_cards():

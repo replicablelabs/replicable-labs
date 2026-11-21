@@ -18,8 +18,3 @@ def get_system_prompt():
         .read_text(encoding="utf-8")
         .strip()
     )
-
-
-def load_description(schema_file: str) -> str:
-    """Read description.md that sits next to the given schema.py (pass __file__)."""
-    return (Path(schema_file).parent / "description.md").read_text().strip()

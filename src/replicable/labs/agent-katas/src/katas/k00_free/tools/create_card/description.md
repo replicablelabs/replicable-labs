@@ -1,3 +1,0 @@
-- create a new card by providing the card's [title] and the card's [content]
-- if there is a card with that [title] already, the result has status "exists" and nothing is changed: ask the user whether the existing card should be replaced
-- if the user agrees, call this tool again with the same [title] and [content] and [replace] set to true

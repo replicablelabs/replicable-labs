@@ -1,4 +1,0 @@
-- get card based on a [name] or on a [ID]
-- use [list_cards] if you couldn't find a card with that [name] or [id]
-- matches are **exact matches**
-- you can also use [find_card] if you couldn't find exact matches

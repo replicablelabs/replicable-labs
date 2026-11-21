@@ -1,4 +1,0 @@
-- Delete a card by [id] or by [title]; provide at least one, and if you provide both they must belong to the same card
-- Get the card with [get_card] for exact matches, otherwise follow the instructions at [get_card] to get the card
-- If no such card exists, inform the user that no such card exists
-- List existing cards if they **sort of match** the user selected card by [title], if any cards exist. You can find these cards by running [list_cards].

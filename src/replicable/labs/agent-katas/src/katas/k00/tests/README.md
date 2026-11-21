@@ -1,25 +1,22 @@
 # k00 tests
 
-Unit tests for the k00 sandbox: the card store (`db/`) and the card tools (`tools/`).
-They are deterministic and need **no API key** and no network.
-
-They do not test the model. Whether the model picks the right tool, or answers well,
-is an eval, not a unit test (see `../docs/evals.md`).
+Unit tests for the k00 sandbox.
 
 ## Run them
 
 From the lab directory (`src/replicable/labs/agent-katas`):
 
 ```bash
-uv run pytest                                   # every kata's tests
-uv run pytest src/katas/k00                     # only k00
-uv run pytest src/katas/k00 -v                  # one line per test
-uv run pytest src/katas/k00 -x                  # stop at the first failure
+cd src/replicable/labs/agent-katas
+uv run pytest                     # only k00
+uv run pytest -v                  # one line per test
+uv run pytest -x                  # stop at the first failure
 ```
 
 Run one area, one file or one test:
 
 ```bash
+cd src/replicable/labs/agent-katas
 uv run pytest src/katas/k00/tests/db
 uv run pytest src/katas/k00/tests/tools/test_create_card.py
 uv run pytest src/katas/k00/tests/test_schemas.py::test_every_status_is_exercised_by_a_case
@@ -32,17 +29,17 @@ uv run pytest src/katas/k00 -k "not_found"      # tests whose name or parameters
 ## Layout
 
 ```
-conftest.py        shared fixtures (below)
-db/                the in-memory card store
-  test_store.py      seed data, ids, reset, delete
-  test_search.py     fuzzy search ranking and scores
-tools/             what each tool returns when the tool runner calls it
+conftest.py               shared fixtures (below)
+db/                       the in-memory card store
+  test_store.py           seed data, ids, reset, delete
+  test_search.py          fuzzy search ranking and scores
+tools/                    what each tool returns when the tool runner calls it
   test_create_card.py     created / exists / replaced
   test_delete_card.py
   test_schedule_card.py
   test_read_tools.py      list_cards, get_card, find_card
   test_run_tool.py        the tool runner and the @tool decorator
-test_schemas.py    the contract between the tool code and the model
+test_schemas.py           the contract between the tool code and the model
 ```
 
 `test_schemas.py` sits at the top because it spans every tool. It checks that what the

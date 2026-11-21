@@ -17,6 +17,7 @@ def search_cards(query: str) -> list[Card]:
 
 
 def _words(text: str) -> list[str]:
+    """Split text into lowercase word tokens."""
     return re.findall(r"\w+", text.casefold())
 
 

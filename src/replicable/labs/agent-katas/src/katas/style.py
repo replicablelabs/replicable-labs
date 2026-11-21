@@ -2,18 +2,37 @@
 import os, sys
 
 def _on(stream) -> bool:
+    """Whether to emit colour for `stream`: off if NO_COLOR, on if FORCE_COLOR, else only for a terminal."""
     if os.environ.get("NO_COLOR"): return False
     return bool(os.environ.get("FORCE_COLOR")) or stream.isatty()
 
 def _paint(code: str, text: str, stream=None) -> str:
+    """Wrap `text` in the ANSI colour `code` if colour is on for `stream` (default stdout)."""
     return f"\033[{code}m{text}\033[0m" if _on(stream or sys.stdout) else text
 
-def red(t, stream=None): return _paint("31;1", t, stream)
-def green(t, stream=None): return _paint("32", t, stream)
-def yellow(t, stream=None): return _paint("33", t, stream)
-def cyan(t, stream=None): return _paint("36", t, stream)
-def dim(t, stream=None): return _paint("2", t, stream)
-def bold(t, stream=None): return _paint("1", t, stream)
+def red(t, stream=None):
+    """Bold red text."""
+    return _paint("31;1", t, stream)
+
+def green(t, stream=None):
+    """Green text."""
+    return _paint("32", t, stream)
+
+def yellow(t, stream=None):
+    """Yellow text."""
+    return _paint("33", t, stream)
+
+def cyan(t, stream=None):
+    """Cyan text."""
+    return _paint("36", t, stream)
+
+def dim(t, stream=None):
+    """Dimmed text."""
+    return _paint("2", t, stream)
+
+def bold(t, stream=None):
+    """Bold text."""
+    return _paint("1", t, stream)
 
 def die(msg: str):
     """Print an error in red to stderr and exit non-zero."""

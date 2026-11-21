@@ -12,5 +12,6 @@ SAMPLES = [
 
 
 def seed() -> None:
+    """Add the sample cards to the store."""
     for title, content in SAMPLES:
         store.add_card(title, content)

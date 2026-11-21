@@ -40,10 +40,12 @@ class Card(BaseModel):
 
     @classmethod
     def full(cls, card: db.Card) -> "Card":
+        """The card with every stored field (id, title, content, scheduled_at)."""
         return cls(id=card.id, title=card.title, content=card.content, scheduled_at=card.scheduled_at)
 
     @classmethod
     def brief(cls, card: db.Card) -> "Card":
+        """Just the id and title, for results that don't need the content."""
         return cls(id=card.id, title=card.title)
 
 
@@ -56,6 +58,7 @@ class Result(BaseModel):
 
     @classmethod
     def not_found(cls) -> "Result":
+        """The `not_found` outcome, with the standard message about id and title."""
         return cls(status="not_found", message=NO_MATCH)
 
 

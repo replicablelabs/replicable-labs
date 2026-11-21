@@ -13,6 +13,7 @@ def show(resp, keep_none: bool = False) -> None:
 
 
 def get_system_prompt():
+    """Read the system prompt from `k00/prompts/system.md`, stripped of surrounding whitespace."""
     return (
         (Path(__file__).parent.parent / "prompts" / "system.md")
         .read_text(encoding="utf-8")

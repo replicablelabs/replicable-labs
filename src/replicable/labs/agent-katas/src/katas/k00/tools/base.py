@@ -13,8 +13,12 @@ from pydantic import BaseModel
 
 
 def tool(func):
+    """Turn `func` (which returns a result model) into a `@beta_tool`."""
+
     @functools.wraps(func)
     def wrapper(*args, **kwargs) -> str:
+        """Call `func` and return its result model as JSON (`functools.wraps` replaces this
+        docstring with `func`'s, which is what the model sees as the tool description)."""
         result = func(*args, **kwargs)
         assert isinstance(result, BaseModel), f"{func.__name__} must return a result model"
         return result.model_dump_json(exclude_none=True)

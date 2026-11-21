@@ -13,6 +13,7 @@ from .style import die, dim, pretty_tracebacks
 
 
 def _client():
+    """Build the Anthropic client, warning on stderr if no credentials are configured."""
     import anthropic
 
     if not (os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_PROFILE")):
@@ -24,6 +25,7 @@ def _client():
 
 
 def cmd_run(a):
+    """`kata run`: validate the kata name, then call `main(client, args)` in k00/agent.py."""
     if not re.fullmatch(r"k?0+", a.kata.strip().lower()):
         die(f"unknown kata {a.kata!r}; the only one is k00")
     from .k00 import agent
@@ -35,6 +37,7 @@ def cmd_run(a):
 
 
 def main(argv=None):
+    """Entry point for the `kata` command: parse `argv` and dispatch to the subcommand."""
     p = argparse.ArgumentParser(prog="kata", description="Run the k00 card-agent sandbox.")
     sub = p.add_subparsers(dest="cmd", required=True)
     r = sub.add_parser("run", help="run k00/agent.py against the real model")

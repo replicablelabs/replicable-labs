@@ -1,9 +1,9 @@
 from datetime import datetime
 
-from ... import db
-from ...utils.utils import ToolError
-from ..base import tool
-from ..schemas import CardView, Result
+from .. import db
+from ..utils.utils import ToolError
+from .base import tool
+from .schemas import CardView, Result
 
 
 @tool

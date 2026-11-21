@@ -1,19 +1,20 @@
 """Tool registry: every card tool's definition, plus `run_tool` to execute one call.
 
-Each tool is a sub-package whose `impl.py` holds one `@beta_tool` function named
-like the tool. Its name, description and input schema all come from that
-function's signature and docstring.
+Each tool is a module named like the tool (`get_card.py`) holding one `@tool`
+function with the same name. Its name, description and input schema all come
+from that function's signature and docstring.
 """
-
-import json
 
 from ..utils.utils import ToolError
 from . import create_card, delete_card, find_card, get_card, list_cards, schedule_card
 
-_PACKAGES = [create_card, delete_card, find_card, get_card, list_cards, schedule_card]
+_MODULES = (create_card, delete_card, find_card, get_card, list_cards, schedule_card)
 
 # name -> decorated tool object (has .to_dict(), .call(), .func)
-TOOLS = {pkg.__name__.rsplit(".", 1)[-1]: getattr(pkg.impl, pkg.__name__.rsplit(".", 1)[-1]) for pkg in _PACKAGES}
+TOOLS = {}
+for _module in _MODULES:
+    _name = _module.__name__.rpartition(".")[2]
+    TOOLS[_name] = getattr(_module, _name)
 
 SCHEMAS = [tool.to_dict() for tool in TOOLS.values()]
 

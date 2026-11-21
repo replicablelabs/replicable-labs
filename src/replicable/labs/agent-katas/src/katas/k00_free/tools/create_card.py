@@ -1,6 +1,6 @@
-from ... import db
-from ..base import tool
-from ..schemas import CardView, Result
+from .. import db
+from .base import tool
+from .schemas import CardView, Result
 
 
 @tool

@@ -1,7 +1,7 @@
-from ... import db
-from ...utils.utils import ToolError
-from ..base import tool
-from ..schemas import Match, Matches
+from .. import db
+from ..utils.utils import ToolError
+from .base import tool
+from .schemas import Match, Matches
 
 
 @tool

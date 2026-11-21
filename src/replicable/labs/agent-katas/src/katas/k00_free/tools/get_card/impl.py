@@ -1,7 +1,7 @@
 from ... import db
-from ...results import CardView, Result
 from ...utils.utils import ToolError
 from ..base import tool
+from ..schemas import CardView, Result
 
 
 @tool
@@ -25,7 +25,7 @@ def get_card(id: str = "", title: str = "") -> Result:
         title: The card's title. Case-insensitive, otherwise exact.
 
     Returns:
-        A `Result` (see results.py), which @tool serialises to the JSON string
+        A `Result` (see schemas.py), which @tool serialises to the JSON string
         the model reads. Its shape is described in the bullets above, the only
         part of this docstring besides Args that the model sees.
 

@@ -1,6 +1,6 @@
 from ... import db
-from ...results import CardView, Result
 from ..base import tool
+from ..schemas import CardView, Result
 
 
 @tool
@@ -25,7 +25,7 @@ def create_card(title: str, content: str, replace: bool = False) -> Result:
         replace: Set to true only after the user agreed to replace the existing card with this title.
 
     Returns:
-        A `Result` (see results.py), which @tool serialises to the JSON string
+        A `Result` (see schemas.py), which @tool serialises to the JSON string
         the model reads. Its shape is described in the bullets above, the only
         part of this docstring besides Args that the model sees.
     """

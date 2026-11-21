@@ -1,6 +1,6 @@
 """The contract for what card tools return.
 
-Every tool returns one of these models; `tools/base.py` serialises it to the
+Every tool returns one of these models; `base.py` serialises it to the
 JSON string the model reads. Statuses and field names are defined only here,
 so tools cannot drift apart. The descriptions in each tool's docstring say what
 the model should do for each status.
@@ -12,7 +12,7 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel
 
-from .db import Card
+from ..db import Card
 
 Status = Literal[
     "created",    # create_card: a new card was added

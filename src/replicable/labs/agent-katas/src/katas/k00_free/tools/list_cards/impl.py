@@ -1,6 +1,6 @@
 from ... import db
-from ...results import CardView, Cards
 from ..base import tool
+from ..schemas import CardView, Cards
 
 
 @tool
@@ -17,7 +17,7 @@ def list_cards() -> Cards:
     - to search by words instead of reading the whole list, use [find_card]
 
     Returns:
-        A `Cards` (see results.py), which @tool serialises to the JSON string
+        A `Cards` (see schemas.py), which @tool serialises to the JSON string
         the model reads. Its shape is described in the bullets above, the only
         part of this docstring that the model sees.
     """

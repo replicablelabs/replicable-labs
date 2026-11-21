@@ -103,7 +103,7 @@ def test_every_status_a_tool_returns_is_documented(tool, args, status):
 def test_every_status_in_the_contract_is_documented_by_some_tool():
     from typing import get_args
 
-    from katas.k00_free.results import Status
+    from katas.k00_free.tools.schemas import Status
 
     descriptions = " ".join(s["description"] for s in SCHEMAS)
     for status in get_args(Status):

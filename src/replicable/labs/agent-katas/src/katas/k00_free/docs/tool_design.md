@@ -30,7 +30,7 @@ Notes from the k00 exercise. Tools are the agent's hands: the model only knows w
 
 14. **DO NOT** include output format. Output format is for the end user, and that is specified at the [system prompt]. This is about how the final reply looks, not about what a tool returns: document the tool's result shape (item 15).
 
-15. **Specify each tool's input and output contract.** The API only has a schema for inputs; a tool's result is a plain string that the model reads. So describe the result in the description: the possible `status` values and their fields, what an empty result means, and what each status should make the model do next (for example, `exists` means ask the user, then call again with `replace`). Use the same result shape across tools so the model learns it once. Enforce that in code: tools return pydantic models from one `results.py` (statuses in a single `Literal`), and a wrapper serialises them. The model only ever sees the JSON, so the contract still has to reach it through the descriptions.
+15. **Specify each tool's input and output contract.** The API only has a schema for inputs; a tool's result is a plain string that the model reads. So describe the result in the description: the possible `status` values and their fields, what an empty result means, and what each status should make the model do next (for example, `exists` means ask the user, then call again with `replace`). Use the same result shape across tools so the model learns it once. Enforce that in code: tools return pydantic models from one `tools/schemas.py` (statuses in a single `Literal`), and a wrapper serialises them. The model only ever sees the JSON, so the contract still has to reach it through the descriptions.
 
 16. **Don't repeat result statuses in the system prompt.** The prompt says what the user should see ("ask before replacing a card"); the tool description says which status triggers it. Then renaming a status can't silently break the prompt. Recheck both whenever either changes.
 
@@ -40,12 +40,13 @@ Notes from the k00 exercise. Tools are the agent's hands: the model only knows w
 k00_free/
   mine.py              entry point: `uv run kata run k00 "prompt"`; passes SCHEMAS to messages.create
   prompts/system.md    system prompt (policy: roles, rules, user-facing output format)
-  results.py           pydantic contract for tool results: Status literal, Result, CardView, Matches, Cards
   tools/
     __init__.py        registry: TOOLS, SCHEMAS, run_tool(name, input) -> (content, is_error)
     base.py            @tool: @beta_tool plus serialising the returned result model to JSON
+    schemas.py         pydantic contract for tool results: Status literal, Result, CardView, Matches, Cards
     <tool>/impl.py     one @tool function per tool; its docstring IS the tool definition
-  db/                  in-memory card store: models, store, search, seed (re-exported by __init__)
+  db/                  in-memory card store: models (storage types), store, search, seed
+                       (`tools/schemas.py` = what the model sees; `db/models.py` = what is stored)
   utils/utils.py       ToolError, show(), get_system_prompt()
   docs/                these notes: tool design, system prompt checklist, evals
 ```

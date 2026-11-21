@@ -1,7 +1,7 @@
 from ... import db
-from ...results import Match, Matches
 from ...utils.utils import ToolError
 from ..base import tool
+from ..schemas import Match, Matches
 
 
 @tool
@@ -27,7 +27,7 @@ def find_card(id: str = "", title: str = "", content: str = "") -> Matches:
         content: Words from the card's content.
 
     Returns:
-        A `Matches` (see results.py), which @tool serialises to the JSON string
+        A `Matches` (see schemas.py), which @tool serialises to the JSON string
         the model reads. Its shape is described in the bullets above, the only
         part of this docstring besides Args that the model sees.
 

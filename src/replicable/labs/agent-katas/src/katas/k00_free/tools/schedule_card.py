@@ -3,7 +3,7 @@ from datetime import datetime
 from .. import db
 from ..utils.utils import ToolError
 from .base import tool
-from .schemas import CardView, Result
+from .schemas import Card, Result
 
 
 @tool
@@ -50,5 +50,5 @@ def schedule_card(scheduled_at: str, id: str = "", title: str = "") -> Result:
     card = db.set_schedule(card.id, when.isoformat())
     return Result(
         status="scheduled",
-        card=CardView(id=card.id, title=card.title, scheduled_at=card.scheduled_at),
+        card=Card(id=card.id, title=card.title, scheduled_at=card.scheduled_at),
     )

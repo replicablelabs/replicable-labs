@@ -122,13 +122,13 @@ def test_tools_must_return_a_result_model():
         bad.call({})
 
 
-@pytest.mark.parametrize("tool,key", [("find_card", "matches"), ("list_cards", "cards")])
-def test_list_results_name_their_key_in_the_description(tool, key):
+@pytest.mark.parametrize("tool", ["find_card", "list_cards"])
+def test_list_results_name_their_key_in_the_description(tool):
     from katas.k00_free.tools import TOOLS
 
     out, err = call(tool, **({"title": "milk"} if tool == "find_card" else {}))
-    assert not err and key in out
-    assert f"[{key}]" in TOOLS[tool].to_dict()["description"]
+    assert not err and "cards" in out
+    assert "[cards]" in TOOLS[tool].to_dict()["description"]
 
 
 def test_list_cards():
@@ -147,9 +147,10 @@ def test_get_card():
 
 def test_find_card():
     out, err = call("find_card", content="lisbon")
-    assert not err and out["matches"][0]["title"] == "Book flights"
-    assert call("find_card", id="1")[0]["matches"][0]["id"] == "1"
-    assert call("find_card", title="zzzzzz")[0]["matches"] == []
+    assert not err and out["cards"][0]["title"] == "Book flights"
+    assert out["cards"][0]["score"] > 0
+    assert call("find_card", id="1")[0]["cards"][0]["id"] == "1"
+    assert call("find_card", title="zzzzzz")[0]["cards"] == []
     assert call("find_card")[1] is True
 
 

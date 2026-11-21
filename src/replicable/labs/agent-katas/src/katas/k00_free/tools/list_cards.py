@@ -1,10 +1,10 @@
 from .. import db
 from .base import tool
-from .schemas import CardView, Cards
+from .schemas import Card, CardList
 
 
 @tool
-def list_cards() -> Cards:
+def list_cards() -> CardList:
     """List all the existing cards.
 
     Takes no arguments. Use it to see what cards exist, to find a card's [id]
@@ -17,8 +17,8 @@ def list_cards() -> Cards:
     - to search by words instead of reading the whole list, use [find_card]
 
     Returns:
-        A `Cards` (see schemas.py), which @tool serialises to the JSON string
+        A `CardList` (see schemas.py), which @tool serialises to the JSON string
         the model reads. Its shape is described in the bullets above, the only
         part of this docstring that the model sees.
     """
-    return Cards(cards=[CardView.brief(c) for c in db.list_cards()])
+    return CardList(cards=[Card.brief(c) for c in db.list_cards()])

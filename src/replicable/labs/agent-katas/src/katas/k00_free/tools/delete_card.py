@@ -1,7 +1,7 @@
 from .. import db
 from ..utils.utils import ToolError
 from .base import tool
-from .schemas import CardView, Result
+from .schemas import Card, Result
 
 
 @tool
@@ -38,4 +38,4 @@ def delete_card(id: str = "", title: str = "") -> Result:
     card = db.delete_card(id, title)
     if card is None:
         return Result.not_found()
-    return Result(status="deleted", card=CardView.brief(card))
+    return Result(status="deleted", card=Card.brief(card))

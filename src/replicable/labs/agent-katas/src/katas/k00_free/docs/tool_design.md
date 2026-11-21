@@ -43,7 +43,7 @@ k00_free/
   tools/
     __init__.py        registry: TOOLS, SCHEMAS, run_tool(name, input) -> (content, is_error)
     base.py            @tool: @beta_tool plus serialising the returned result model to JSON
-    schemas.py         pydantic contract for tool results: Status literal, Result, CardView, Matches, Cards
+    schemas.py         pydantic contract for tool results: Status literal, Card, Result, CardList
     <tool>.py          one module per tool (get_card.py, ...) with one @tool function; its docstring IS the tool definition
   db/                  in-memory card store: models (storage types), store, search, seed
                        (`tools/schemas.py` = what the model sees; `db/models.py` = what is stored)

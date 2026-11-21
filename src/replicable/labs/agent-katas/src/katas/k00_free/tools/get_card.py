@@ -1,7 +1,7 @@
 from .. import db
 from ..utils.utils import ToolError
 from .base import tool
-from .schemas import CardView, Result
+from .schemas import Card, Result
 
 
 @tool
@@ -38,4 +38,4 @@ def get_card(id: str = "", title: str = "") -> Result:
     card = db.find_card(id, title)
     if card is None:
         return Result.not_found()
-    return Result(status="found", card=CardView.full(card))
+    return Result(status="found", card=Card.full(card))

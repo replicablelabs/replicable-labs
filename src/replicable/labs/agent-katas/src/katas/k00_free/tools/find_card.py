@@ -1,11 +1,11 @@
 from .. import db
 from ..utils.utils import ToolError
 from .base import tool
-from .schemas import Match, Matches
+from .schemas import Card, CardList
 
 
 @tool
-def find_card(id: str = "", title: str = "", content: str = "") -> Matches:
+def find_card(id: str = "", title: str = "", content: str = "") -> CardList:
     """Find cards by approximate match.
 
     Use it when you don't know the exact [id] or [title], for example when the
@@ -13,7 +13,7 @@ def find_card(id: str = "", title: str = "", content: str = "") -> Matches:
 
     - find cards by approximate match on the card's [title] or [content], or by [id]; provide at least one
     - matching is fuzzy: each word you give is compared with the words of every card's title and content, so typos and partial words still match
-    - returns [matches], the best first, each with its [id], [title] and a [score] between 0 and 1 (higher is a better match); only a short list is returned (at most 6)
+    - returns [cards], the best match first, each with its [id], [title] and a [score] between 0 and 1 (higher is a better match); only a short list is returned (at most 6)
     - only [id], [title] and [score] are returned, not the content; use [get_card] with a returned [id] to read the full card
     - an empty list means nothing matched; that is a normal answer, not an error, so tell the user or try different words, or use [list_cards]
     - read-only: it never changes a card
@@ -27,7 +27,7 @@ def find_card(id: str = "", title: str = "", content: str = "") -> Matches:
         content: Words from the card's content.
 
     Returns:
-        A `Matches` (see schemas.py), which @tool serialises to the JSON string
+        A `CardList` (see schemas.py), which @tool serialises to the JSON string
         the model reads. Its shape is described in the bullets above, the only
         part of this docstring besides Args that the model sees.
 
@@ -39,13 +39,13 @@ def find_card(id: str = "", title: str = "", content: str = "") -> Matches:
     if not id and not query:
         raise ToolError("Provide at least one of id, title or content.")
 
-    matches: list[Match] = []
+    cards: list[Card] = []
     if id:
         by_id = db.get_card_by_id(id)
         if by_id is not None:
-            matches.append(Match(id=by_id.id, title=by_id.title, score=1.0))
+            cards.append(Card(id=by_id.id, title=by_id.title, score=1.0))
     for card in db.fuzzy_search_cards(query) if query else []:
-        if not any(m.id == card.id for m in matches):
-            matches.append(Match(id=card.id, title=card.title, score=card.score))
+        if not any(c.id == card.id for c in cards):
+            cards.append(Card(id=card.id, title=card.title, score=card.score))
     # An empty list is a normal answer, not an error.
-    return Matches(matches=matches)
+    return CardList(cards=cards)

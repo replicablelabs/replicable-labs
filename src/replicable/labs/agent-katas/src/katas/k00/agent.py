@@ -1,3 +1,8 @@
+"""The k00 agent: the request sent to the model and the tool loop.
+
+`uv run kata run k00 "your prompt"` calls `main(client, args)` here.
+"""
+
 import typing
 
 from anthropic import Anthropic

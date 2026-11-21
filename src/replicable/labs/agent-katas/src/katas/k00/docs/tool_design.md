@@ -30,11 +30,11 @@ Notes from the k00 exercise. Tools are the agent's hands: the model only knows w
 
 14. **DO NOT** include output format. Output format is for the end user, and that is specified at the [system prompt]. This is about how the final reply looks, not about what a tool returns: document the tool's result shape (item 15).
 
-15. **Specify each tool's input and output contract.** The API only has a schema for inputs; a tool's result is a plain string that the model reads. So describe the result in the description: the possible `status` values and their fields, what an empty result means, and what each status should make the model do next (for example, `exists` means ask the user, then call again with `replace`). Use the same result shape across tools so the model learns it once. Enforce that in code: tools return pydantic models from one `tools/schemas.py` (statuses in a single `Literal`), and a wrapper serialises them. The model only ever sees the JSON, so the contract still has to reach it through the descriptions.
+15. **Specify each tool's input and output contract.** The API only has a schema for inputs; a tool's result is a plain string that the model reads. So describe the result in the description: the possible `status` values and their fields, what an empty result means, and what each status should make the model do next (for example, `exists` means ask the user, then call again with `replace`). Use the same result shape across tools so the model learns it once. Enforce that in code: tools return pydantic models from one `tools/schemas.py` (statuses in a single `Status` enum), and a wrapper serialises them. The model only ever sees the JSON, so the contract still has to reach it through the descriptions.
 
 16. **Don't repeat result statuses in the system prompt.** The prompt says what the user should see ("ask before replacing a card"); the tool description says which status triggers it. Then renaming a status can't silently break the prompt. Recheck both whenever either changes.
 
-17. **Return an object, even for a list.** Wrap lists as `{"cards": [...]}` (`CardList`), not a bare `[...]`. Every result then has the same shape, an empty result is explicit (`{"cards": []}`), and you can add `total` or `truncated` later without changing the contract.
+17. **Return an object, even for a list.** Wrap lists as `{"cards": [...]}`, not a bare `[...]`. Every tool returns one `Result` (`status`, `cards`, `message`), where `cards` is always a list of zero, one or more cards, so every result has the same shape, an empty result is explicit (`{"cards": []}`), and you can add `total` or `truncated` later without changing the contract.
 
 ## Repo layout
 
@@ -45,7 +45,7 @@ k00/
   tools/
     __init__.py        registry: TOOLS, SCHEMAS, run_tool(name, input) -> (content, is_error)
     base.py            @tool: @beta_tool plus serialising the returned result model to JSON
-    schemas.py         pydantic contract for tool results: Status literal, Card, Result, CardList
+    schemas.py         pydantic contract for tool results: Status enum, Card, Result (one shape for every tool)
     <tool>.py          one module per tool (get_card.py, ...) with one @tool function; its docstring IS the tool definition
   db/                  in-memory card store: models (storage types), store, search, seed
                        (`tools/schemas.py` = what the model sees; `db/models.py` = what is stored)
@@ -76,4 +76,4 @@ Practical rules:
 - `@beta_tool(description=...)` overrides the docstring if you ever need to keep the text elsewhere.
 - Give optional parameters a default (`str = ""`), so Claude can leave them out. Avoid `str | None`, which adds an `anyOf` with `null`.
 - Run the tool with `tool.call(input_dict)`: it validates arguments and raises `ValueError` if they are wrong. `tool.to_dict()` is the definition to send.
-- Tests worth keeping: every parameter has an `Args:` entry, the required list matches the signature, every status a tool returns appears in its description, and every status in the `Status` literal is documented by some tool.
+- Tests worth keeping: every parameter has an `Args:` entry, the required list matches the signature, every status a tool returns appears in its description, and every status in the `Status` enum is documented by some tool.

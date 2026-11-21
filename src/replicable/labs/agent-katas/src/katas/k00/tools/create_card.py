@@ -1,6 +1,6 @@
 from .. import db
 from .base import tool
-from .schemas import Card, Result
+from .schemas import Card, Result, Status
 
 
 @tool
@@ -15,7 +15,7 @@ def create_card(title: str, content: str, replace: bool = False) -> Result:
     - when the status is "exists", show the user the existing card and ask whether it should be replaced; only if they agree, call this tool again with the same [title] and [content] and [replace] set to true
     - never set [replace] to true without the user's agreement: replacing overwrites the existing card's content (the card keeps its [id])
     - writes data: creating adds a card, replacing overwrites one
-    - returns status "created", "exists" or "replaced", each with the card ([id], [title], [content])
+    - returns [status] "created", "exists" or "replaced", each with [cards] holding the one card ([id], [title], [content])
     - a missing [title] or [content] produces an error result; call again with both
     - examples: [title] "Capital of France" with [content] "Paris"; then, after the user agreed to replace it, the same [title] with new [content] and [replace] true
 
@@ -32,9 +32,9 @@ def create_card(title: str, content: str, replace: bool = False) -> Result:
     existing = db.get_card_by_title(title)
     if existing is None:
         card = db.add_card(title, content)
-        return Result(status="created", card=Card.full(card))
+        return Result(status=Status.CREATED, cards=[Card.full(card)])
     if not replace:
         # Not an error: the model must ask the user, then call again with replace=true.
-        return Result(status="exists", card=Card.full(existing))
+        return Result(status=Status.EXISTS, cards=[Card.full(existing)])
     card = db.update_card(existing.id, content)
-    return Result(status="replaced", card=Card.full(card))
+    return Result(status=Status.REPLACED, cards=[Card.full(card)])

@@ -1,11 +1,11 @@
 from .. import db
 from ..utils.utils import ToolError
 from .base import tool
-from .schemas import Card, CardList
+from .schemas import Card, Result, Status
 
 
 @tool
-def find_card(id: str = "", title: str = "", content: str = "") -> CardList:
+def find_card(id: str = "", title: str = "", content: str = "") -> Result:
     """Find cards by approximate match.
 
     Use it when you don't know the exact [id] or [title], for example when the
@@ -13,7 +13,7 @@ def find_card(id: str = "", title: str = "", content: str = "") -> CardList:
 
     - find cards by approximate match on the card's [title] or [content], or by [id]; provide at least one
     - matching is fuzzy: each word you give is compared with the words of every card's title and content, so typos and partial words still match
-    - returns [cards], the best match first, each with its [id], [title] and a [score] between 0 and 1 (higher is a better match); only a short list is returned (at most 6)
+    - returns [status] "listed" with [cards], the best match first, each with its [id], [title] and a [score] between 0 and 1 (higher is a better match); only a short list is returned (at most 6)
     - only [id], [title] and [score] are returned, not the content; use [get_card] with a returned [id] to read the full card
     - an empty list means nothing matched; that is a normal answer, not an error, so tell the user or try different words, or use [list_cards]
     - read-only: it never changes a card
@@ -27,7 +27,7 @@ def find_card(id: str = "", title: str = "", content: str = "") -> CardList:
         content: Words from the card's content.
 
     Returns:
-        A `CardList` (see schemas.py), which @tool serialises to the JSON string
+        A `Result` (see schemas.py), which @tool serialises to the JSON string
         the model reads. Its shape is described in the bullets above, the only
         part of this docstring besides Args that the model sees.
 
@@ -48,4 +48,4 @@ def find_card(id: str = "", title: str = "", content: str = "") -> CardList:
         if not any(c.id == card.id for c in cards):
             cards.append(Card(id=card.id, title=card.title, score=card.score))
     # An empty list is a normal answer, not an error.
-    return CardList(cards=cards)
+    return Result(status=Status.LISTED, cards=cards)

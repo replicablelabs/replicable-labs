@@ -1,7 +1,7 @@
 from .. import db
 from ..utils.utils import ToolError
 from .base import tool
-from .schemas import Card, Result
+from .schemas import Card, Result, Status
 
 
 @tool
@@ -16,7 +16,7 @@ def delete_card(id: str = "", title: str = "") -> Result:
     - if no such card exists, inform the user that no such card exists
     - list existing cards if they **sort of match** the user selected card by [title], if any cards exist. You can find these cards by running [list_cards].
     - writes data: the card is removed and its [id] is not reused for another card
-    - returns status "deleted" with the removed card's [id] and [title], or status "not_found" with a message; not found is a normal answer, not an error
+    - returns [status] "deleted" with [cards] holding the removed card's [id] and [title], or [status] "not_found" with a [message] and an empty [cards]; not found is a normal answer, not an error
     - an error result means neither [id] nor [title] was given; call again with one of them
     - examples: [id] "3"; [title] "Book flights"
 
@@ -38,4 +38,4 @@ def delete_card(id: str = "", title: str = "") -> Result:
     card = db.delete_card(id, title)
     if card is None:
         return Result.not_found()
-    return Result(status="deleted", card=Card.brief(card))
+    return Result(status=Status.DELETED, cards=[Card.brief(card)])

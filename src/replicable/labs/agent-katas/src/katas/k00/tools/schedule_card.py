@@ -3,7 +3,7 @@ from datetime import datetime
 from .. import db
 from ..utils.utils import ToolError
 from .base import tool
-from .schemas import Card, Result
+from .schemas import Card, Result, Status
 
 
 @tool
@@ -17,7 +17,7 @@ def schedule_card(scheduled_at: str, id: str = "", title: str = "") -> Result:
     - convert relative wording such as "tomorrow at 9" into an absolute datetime first; if you don't know today's date, ask the user instead of guessing
     - a card has one schedule: scheduling it again replaces its previous datetime
     - writes data: it changes only the card's schedule, never its title or content
-    - returns status "scheduled" with the card's [id], [title] and [scheduled_at], or status "not_found" with a message; not found is a normal answer, not an error
+    - returns [status] "scheduled" with [cards] holding the card's [id], [title] and [scheduled_at], or [status] "not_found" with a [message] and an empty [cards]; not found is a normal answer, not an error
     - an error result means no [id] or [title] was given, or [scheduled_at] is not a valid ISO 8601 datetime; fix the argument and call again
     - examples: [id] "1" with [scheduled_at] "2026-11-25T09:00"; [title] "Buy milk" with [scheduled_at] "2026-12-01"
 
@@ -49,6 +49,6 @@ def schedule_card(scheduled_at: str, id: str = "", title: str = "") -> Result:
         return Result.not_found()
     card = db.set_schedule(card.id, when.isoformat())
     return Result(
-        status="scheduled",
-        card=Card(id=card.id, title=card.title, scheduled_at=card.scheduled_at),
+        status=Status.SCHEDULED,
+        cards=[Card(id=card.id, title=card.title, scheduled_at=card.scheduled_at)],
     )

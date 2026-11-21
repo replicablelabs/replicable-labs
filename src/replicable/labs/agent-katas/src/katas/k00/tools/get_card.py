@@ -1,7 +1,7 @@
 from .. import db
 from ..utils.utils import ToolError
 from .base import tool
-from .schemas import Card, Result
+from .schemas import Card, Result, Status
 
 
 @tool
@@ -16,7 +16,7 @@ def get_card(id: str = "", title: str = "") -> Result:
     - use [find_card] if you only know part of the title or something from the content
     - use [list_cards] to see every card, e.g. when you couldn't find a card with that [title] or [id]
     - read-only: it never changes a card
-    - returns status "found" with the card ([id], [title], [content] and [scheduled_at] if the card is scheduled), or status "not_found" with a message; not found is a normal answer, not an error
+    - returns [status] "found" with [cards] holding the one card ([id], [title], [content] and [scheduled_at] if the card is scheduled), or [status] "not_found" with a [message] and an empty [cards]; not found is a normal answer, not an error
     - an error result means neither [id] nor [title] was given; call again with one of them
     - examples: [id] "2"; [title] "Buy milk"; [id] "1" together with [title] "Buy milk" (only if they are the same card)
 
@@ -38,4 +38,4 @@ def get_card(id: str = "", title: str = "") -> Result:
     card = db.find_card(id, title)
     if card is None:
         return Result.not_found()
-    return Result(status="found", card=Card.full(card))
+    return Result(status=Status.FOUND, cards=[Card.full(card)])

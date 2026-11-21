@@ -28,6 +28,8 @@ def kid(d: Path) -> str: return d.name[:3]
 
 def _blank_source(d: Path) -> Path: return d / "skeleton.py" if (d / "skeleton.py").exists() else d / "starter.py"
 
+def _has_blank(d: Path) -> bool: return (d / "skeleton.py").exists() or (d / "starter.py").exists()
+
 def _pristine(p: Path) -> str:
     """The COMMITTED text of a file (what it looked like before you edited it); falls back to the file itself outside git."""
     r = subprocess.run(["git", "show", f"HEAD:./{p.relative_to(LAB)}"], cwd=LAB, capture_output=True, text=True)
@@ -35,7 +37,7 @@ def _pristine(p: Path) -> str:
 
 def _hide_from_git():
     """mine.py and starter.py are committed pristine; tell git to ignore YOUR edits to them (local-only, idempotent, harmless outside git)."""
-    files = [str(p.relative_to(LAB)) for name in ("mine.py", "starter.py") for p in PKG.glob(f"k0*_*/{name}")]
+    files = [str(p.relative_to(LAB)) for name in ("mine.py", "starter.py") for p in PKG.glob(f"k0*_*/{name}") if _has_blank(p.parent)]
     if files: subprocess.run(["git", "update-index", "--skip-worktree", *files], cwd=LAB, capture_output=True)
 
 def _source(d: Path, origin: str) -> Path:
@@ -101,6 +103,7 @@ def cmd_diff(a):
 def cmd_list(a):
     print(f"{'kata':<24}{'your file':<14}status")
     for d in sorted(PKG.glob("k0*_*")):
+        if not _has_blank(d): continue      # freestyle dirs (k00_free) have no skeleton/starter to compare against
         mine = d / "mine.py"
         if not mine.exists() or mine.read_text() == _pristine(_blank_source(d)):
             print(f"{d.name:<24}{'blank':<14}" + dim(f"not started: edit {mine.relative_to(LAB)}")); continue

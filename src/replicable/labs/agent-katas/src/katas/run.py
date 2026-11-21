@@ -47,7 +47,10 @@ SHOP_SYSTEM = "You are a customer-support agent for an online shop. Use the tool
 
 def run(kata_dir: str, impl: str, args: list[str]):
     k = kata_dir[:3]; m = load(kata_dir, impl)
-    if k == "k01":
+    if k == "k00":      # freestyle sandbox: your mine.py defines main(client, args)
+        if not hasattr(m, "main"): die("k00_free/mine.py needs a `main(client, args)` function.")
+        m.main(_client(), args)
+    elif k == "k01":
         from .k05_descriptions.solution import SCHEMAS
         _agent_run(m.run_agent, " ".join(args) or "Where is order 1002, and what did it contain?", SCHEMAS, SHOP_SYSTEM)
     elif k == "k02":

@@ -1,0 +1,987 @@
+// GENERATED. Run and Debug (Cmd+Shift+D) groups these per kata. Each kata has, for mine / starter / solution:
+//   'test' (pytest in-process, katas 1-4) or 'live-score' (katas 5-6)  and  'run' (kata run with a ready-made scenario).
+// Assumes VS Code is opened at the repo root; if you open the lab folder, replace ${workspaceFolder}/src/replicable/labs/agent-katas with ${workspaceFolder}.
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "debugpy",
+      "request": "launch",
+      "python": "${workspaceFolder}/src/replicable/labs/agent-katas/.venv/bin/python",
+      "cwd": "${workspaceFolder}/src/replicable/labs/agent-katas",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "name": "k01 test \u00b7 mine",
+      "module": "pytest",
+      "args": [
+        "tests/test_k01.py",
+        "-x",
+        "-vv",
+        "-s",
+        "--no-header",
+        "-p",
+        "no:cacheprovider"
+      ],
+      "env": {
+        "KATA_IMPL": "mine"
+      },
+      "presentation": {
+        "group": "k01 loop",
+        "order": 1
+      }
+    },
+    {
+      "type": "debugpy",
+      "request": "launch",
+      "python": "${workspaceFolder}/src/replicable/labs/agent-katas/.venv/bin/python",
+      "cwd": "${workspaceFolder}/src/replicable/labs/agent-katas",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "name": "k01 run \u00b7 mine  (real model, 2 tool calls)",
+      "module": "katas.cli",
+      "args": [
+        "run",
+        "k01",
+        "--mine",
+        "Where is order #1002 and is it eligible for a refund?"
+      ],
+      "presentation": {
+        "group": "k01 loop",
+        "order": 2
+      },
+      "env": {
+        "ANTHROPIC_PROFILE": "dev"
+      },
+      "envFile": "${workspaceFolder}/src/replicable/labs/agent-katas/.env"
+    },
+    {
+      "type": "debugpy",
+      "request": "launch",
+      "python": "${workspaceFolder}/src/replicable/labs/agent-katas/.venv/bin/python",
+      "cwd": "${workspaceFolder}/src/replicable/labs/agent-katas",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "name": "k01 test \u00b7 starter",
+      "module": "pytest",
+      "args": [
+        "tests/test_k01.py",
+        "-x",
+        "-vv",
+        "-s",
+        "--no-header",
+        "-p",
+        "no:cacheprovider"
+      ],
+      "env": {
+        "KATA_IMPL": "starter"
+      },
+      "presentation": {
+        "group": "k01 loop",
+        "order": 3
+      }
+    },
+    {
+      "type": "debugpy",
+      "request": "launch",
+      "python": "${workspaceFolder}/src/replicable/labs/agent-katas/.venv/bin/python",
+      "cwd": "${workspaceFolder}/src/replicable/labs/agent-katas",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "name": "k01 run \u00b7 starter  (real model, 2 tool calls)",
+      "module": "katas.cli",
+      "args": [
+        "run",
+        "k01",
+        "--starter",
+        "Where is order #1002 and is it eligible for a refund?"
+      ],
+      "presentation": {
+        "group": "k01 loop",
+        "order": 4
+      },
+      "env": {
+        "ANTHROPIC_PROFILE": "dev"
+      },
+      "envFile": "${workspaceFolder}/src/replicable/labs/agent-katas/.env"
+    },
+    {
+      "type": "debugpy",
+      "request": "launch",
+      "python": "${workspaceFolder}/src/replicable/labs/agent-katas/.venv/bin/python",
+      "cwd": "${workspaceFolder}/src/replicable/labs/agent-katas",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "name": "k01 test \u00b7 solution",
+      "module": "pytest",
+      "args": [
+        "tests/test_k01.py",
+        "-x",
+        "-vv",
+        "-s",
+        "--no-header",
+        "-p",
+        "no:cacheprovider"
+      ],
+      "env": {
+        "KATA_IMPL": "solution"
+      },
+      "presentation": {
+        "group": "k01 loop",
+        "order": 5
+      }
+    },
+    {
+      "type": "debugpy",
+      "request": "launch",
+      "python": "${workspaceFolder}/src/replicable/labs/agent-katas/.venv/bin/python",
+      "cwd": "${workspaceFolder}/src/replicable/labs/agent-katas",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "name": "k01 run \u00b7 solution  (real model, 2 tool calls)",
+      "module": "katas.cli",
+      "args": [
+        "run",
+        "k01",
+        "--solution",
+        "Where is order #1002 and is it eligible for a refund?"
+      ],
+      "presentation": {
+        "group": "k01 loop",
+        "order": 6
+      },
+      "env": {
+        "ANTHROPIC_PROFILE": "dev"
+      },
+      "envFile": "${workspaceFolder}/src/replicable/labs/agent-katas/.env"
+    },
+    {
+      "type": "debugpy",
+      "request": "launch",
+      "python": "${workspaceFolder}/src/replicable/labs/agent-katas/.venv/bin/python",
+      "cwd": "${workspaceFolder}/src/replicable/labs/agent-katas",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "name": "k02 test \u00b7 mine",
+      "module": "pytest",
+      "args": [
+        "tests/test_k02.py",
+        "-x",
+        "-vv",
+        "-s",
+        "--no-header",
+        "-p",
+        "no:cacheprovider"
+      ],
+      "env": {
+        "KATA_IMPL": "mine"
+      },
+      "presentation": {
+        "group": "k02 tool output",
+        "order": 1
+      }
+    },
+    {
+      "type": "debugpy",
+      "request": "launch",
+      "python": "${workspaceFolder}/src/replicable/labs/agent-katas/.venv/bin/python",
+      "cwd": "${workspaceFolder}/src/replicable/labs/agent-katas",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "name": "k02 run \u00b7 mine  (offline: a 120-item order (truncation))",
+      "module": "katas.cli",
+      "args": [
+        "run",
+        "k02",
+        "--mine",
+        "1005"
+      ],
+      "presentation": {
+        "group": "k02 tool output",
+        "order": 2
+      }
+    },
+    {
+      "type": "debugpy",
+      "request": "launch",
+      "python": "${workspaceFolder}/src/replicable/labs/agent-katas/.venv/bin/python",
+      "cwd": "${workspaceFolder}/src/replicable/labs/agent-katas",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "name": "k02 test \u00b7 starter",
+      "module": "pytest",
+      "args": [
+        "tests/test_k02.py",
+        "-x",
+        "-vv",
+        "-s",
+        "--no-header",
+        "-p",
+        "no:cacheprovider"
+      ],
+      "env": {
+        "KATA_IMPL": "starter"
+      },
+      "presentation": {
+        "group": "k02 tool output",
+        "order": 3
+      }
+    },
+    {
+      "type": "debugpy",
+      "request": "launch",
+      "python": "${workspaceFolder}/src/replicable/labs/agent-katas/.venv/bin/python",
+      "cwd": "${workspaceFolder}/src/replicable/labs/agent-katas",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "name": "k02 run \u00b7 starter  (offline: a 120-item order (truncation))",
+      "module": "katas.cli",
+      "args": [
+        "run",
+        "k02",
+        "--starter",
+        "1005"
+      ],
+      "presentation": {
+        "group": "k02 tool output",
+        "order": 4
+      }
+    },
+    {
+      "type": "debugpy",
+      "request": "launch",
+      "python": "${workspaceFolder}/src/replicable/labs/agent-katas/.venv/bin/python",
+      "cwd": "${workspaceFolder}/src/replicable/labs/agent-katas",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "name": "k02 test \u00b7 solution",
+      "module": "pytest",
+      "args": [
+        "tests/test_k02.py",
+        "-x",
+        "-vv",
+        "-s",
+        "--no-header",
+        "-p",
+        "no:cacheprovider"
+      ],
+      "env": {
+        "KATA_IMPL": "solution"
+      },
+      "presentation": {
+        "group": "k02 tool output",
+        "order": 5
+      }
+    },
+    {
+      "type": "debugpy",
+      "request": "launch",
+      "python": "${workspaceFolder}/src/replicable/labs/agent-katas/.venv/bin/python",
+      "cwd": "${workspaceFolder}/src/replicable/labs/agent-katas",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "name": "k02 run \u00b7 solution  (offline: a 120-item order (truncation))",
+      "module": "katas.cli",
+      "args": [
+        "run",
+        "k02",
+        "--solution",
+        "1005"
+      ],
+      "presentation": {
+        "group": "k02 tool output",
+        "order": 6
+      }
+    },
+    {
+      "type": "debugpy",
+      "request": "launch",
+      "python": "${workspaceFolder}/src/replicable/labs/agent-katas/.venv/bin/python",
+      "cwd": "${workspaceFolder}/src/replicable/labs/agent-katas",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "name": "k03 test \u00b7 mine",
+      "module": "pytest",
+      "args": [
+        "tests/test_k03.py",
+        "-x",
+        "-vv",
+        "-s",
+        "--no-header",
+        "-p",
+        "no:cacheprovider"
+      ],
+      "env": {
+        "KATA_IMPL": "mine"
+      },
+      "presentation": {
+        "group": "k03 tool errors",
+        "order": 1
+      }
+    },
+    {
+      "type": "debugpy",
+      "request": "launch",
+      "python": "${workspaceFolder}/src/replicable/labs/agent-katas/.venv/bin/python",
+      "cwd": "${workspaceFolder}/src/replicable/labs/agent-katas",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "name": "k03 run \u00b7 mine  (offline: refund on a SHIPPED order (error path))",
+      "module": "katas.cli",
+      "args": [
+        "run",
+        "k03",
+        "--mine",
+        "1002",
+        "5"
+      ],
+      "presentation": {
+        "group": "k03 tool errors",
+        "order": 2
+      }
+    },
+    {
+      "type": "debugpy",
+      "request": "launch",
+      "python": "${workspaceFolder}/src/replicable/labs/agent-katas/.venv/bin/python",
+      "cwd": "${workspaceFolder}/src/replicable/labs/agent-katas",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "name": "k03 test \u00b7 starter",
+      "module": "pytest",
+      "args": [
+        "tests/test_k03.py",
+        "-x",
+        "-vv",
+        "-s",
+        "--no-header",
+        "-p",
+        "no:cacheprovider"
+      ],
+      "env": {
+        "KATA_IMPL": "starter"
+      },
+      "presentation": {
+        "group": "k03 tool errors",
+        "order": 3
+      }
+    },
+    {
+      "type": "debugpy",
+      "request": "launch",
+      "python": "${workspaceFolder}/src/replicable/labs/agent-katas/.venv/bin/python",
+      "cwd": "${workspaceFolder}/src/replicable/labs/agent-katas",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "name": "k03 run \u00b7 starter  (offline: refund on a SHIPPED order (error path))",
+      "module": "katas.cli",
+      "args": [
+        "run",
+        "k03",
+        "--starter",
+        "1002",
+        "5"
+      ],
+      "presentation": {
+        "group": "k03 tool errors",
+        "order": 4
+      }
+    },
+    {
+      "type": "debugpy",
+      "request": "launch",
+      "python": "${workspaceFolder}/src/replicable/labs/agent-katas/.venv/bin/python",
+      "cwd": "${workspaceFolder}/src/replicable/labs/agent-katas",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "name": "k03 test \u00b7 solution",
+      "module": "pytest",
+      "args": [
+        "tests/test_k03.py",
+        "-x",
+        "-vv",
+        "-s",
+        "--no-header",
+        "-p",
+        "no:cacheprovider"
+      ],
+      "env": {
+        "KATA_IMPL": "solution"
+      },
+      "presentation": {
+        "group": "k03 tool errors",
+        "order": 5
+      }
+    },
+    {
+      "type": "debugpy",
+      "request": "launch",
+      "python": "${workspaceFolder}/src/replicable/labs/agent-katas/.venv/bin/python",
+      "cwd": "${workspaceFolder}/src/replicable/labs/agent-katas",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "name": "k03 run \u00b7 solution  (offline: refund on a SHIPPED order (error path))",
+      "module": "katas.cli",
+      "args": [
+        "run",
+        "k03",
+        "--solution",
+        "1002",
+        "5"
+      ],
+      "presentation": {
+        "group": "k03 tool errors",
+        "order": 6
+      }
+    },
+    {
+      "type": "debugpy",
+      "request": "launch",
+      "python": "${workspaceFolder}/src/replicable/labs/agent-katas/.venv/bin/python",
+      "cwd": "${workspaceFolder}/src/replicable/labs/agent-katas",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "name": "k04 test \u00b7 mine",
+      "module": "pytest",
+      "args": [
+        "tests/test_k04.py",
+        "-x",
+        "-vv",
+        "-s",
+        "--no-header",
+        "-p",
+        "no:cacheprovider"
+      ],
+      "env": {
+        "KATA_IMPL": "mine"
+      },
+      "presentation": {
+        "group": "k04 structured output",
+        "order": 1
+      }
+    },
+    {
+      "type": "debugpy",
+      "request": "launch",
+      "python": "${workspaceFolder}/src/replicable/labs/agent-katas/.venv/bin/python",
+      "cwd": "${workspaceFolder}/src/replicable/labs/agent-katas",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "name": "k04 run \u00b7 mine  (real model (Haiku): forced tool_choice)",
+      "module": "katas.cli",
+      "args": [
+        "run",
+        "k04",
+        "--mine",
+        "I was charged twice and need this fixed today."
+      ],
+      "presentation": {
+        "group": "k04 structured output",
+        "order": 2
+      },
+      "env": {
+        "ANTHROPIC_PROFILE": "dev"
+      },
+      "envFile": "${workspaceFolder}/src/replicable/labs/agent-katas/.env"
+    },
+    {
+      "type": "debugpy",
+      "request": "launch",
+      "python": "${workspaceFolder}/src/replicable/labs/agent-katas/.venv/bin/python",
+      "cwd": "${workspaceFolder}/src/replicable/labs/agent-katas",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "name": "k04 test \u00b7 starter",
+      "module": "pytest",
+      "args": [
+        "tests/test_k04.py",
+        "-x",
+        "-vv",
+        "-s",
+        "--no-header",
+        "-p",
+        "no:cacheprovider"
+      ],
+      "env": {
+        "KATA_IMPL": "starter"
+      },
+      "presentation": {
+        "group": "k04 structured output",
+        "order": 3
+      }
+    },
+    {
+      "type": "debugpy",
+      "request": "launch",
+      "python": "${workspaceFolder}/src/replicable/labs/agent-katas/.venv/bin/python",
+      "cwd": "${workspaceFolder}/src/replicable/labs/agent-katas",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "name": "k04 run \u00b7 starter  (real model (Haiku): forced tool_choice)",
+      "module": "katas.cli",
+      "args": [
+        "run",
+        "k04",
+        "--starter",
+        "I was charged twice and need this fixed today."
+      ],
+      "presentation": {
+        "group": "k04 structured output",
+        "order": 4
+      },
+      "env": {
+        "ANTHROPIC_PROFILE": "dev"
+      },
+      "envFile": "${workspaceFolder}/src/replicable/labs/agent-katas/.env"
+    },
+    {
+      "type": "debugpy",
+      "request": "launch",
+      "python": "${workspaceFolder}/src/replicable/labs/agent-katas/.venv/bin/python",
+      "cwd": "${workspaceFolder}/src/replicable/labs/agent-katas",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "name": "k04 test \u00b7 solution",
+      "module": "pytest",
+      "args": [
+        "tests/test_k04.py",
+        "-x",
+        "-vv",
+        "-s",
+        "--no-header",
+        "-p",
+        "no:cacheprovider"
+      ],
+      "env": {
+        "KATA_IMPL": "solution"
+      },
+      "presentation": {
+        "group": "k04 structured output",
+        "order": 5
+      }
+    },
+    {
+      "type": "debugpy",
+      "request": "launch",
+      "python": "${workspaceFolder}/src/replicable/labs/agent-katas/.venv/bin/python",
+      "cwd": "${workspaceFolder}/src/replicable/labs/agent-katas",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "name": "k04 run \u00b7 solution  (real model (Haiku): forced tool_choice)",
+      "module": "katas.cli",
+      "args": [
+        "run",
+        "k04",
+        "--solution",
+        "I was charged twice and need this fixed today."
+      ],
+      "presentation": {
+        "group": "k04 structured output",
+        "order": 6
+      },
+      "env": {
+        "ANTHROPIC_PROFILE": "dev"
+      },
+      "envFile": "${workspaceFolder}/src/replicable/labs/agent-katas/.env"
+    },
+    {
+      "type": "debugpy",
+      "request": "launch",
+      "python": "${workspaceFolder}/src/replicable/labs/agent-katas/.venv/bin/python",
+      "cwd": "${workspaceFolder}/src/replicable/labs/agent-katas",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "name": "k05 live-score \u00b7 mine",
+      "module": "katas.cli",
+      "args": [
+        "live",
+        "k05",
+        "--mine",
+        "--runs",
+        "1",
+        "--verbose"
+      ],
+      "env": {
+        "ANTHROPIC_PROFILE": "dev"
+      },
+      "envFile": "${workspaceFolder}/src/replicable/labs/agent-katas/.env",
+      "presentation": {
+        "group": "k05 tool descriptions",
+        "order": 1
+      }
+    },
+    {
+      "type": "debugpy",
+      "request": "launch",
+      "python": "${workspaceFolder}/src/replicable/labs/agent-katas/.venv/bin/python",
+      "cwd": "${workspaceFolder}/src/replicable/labs/agent-katas",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "name": "k05 run \u00b7 mine  (real model: argument-format case)",
+      "module": "katas.cli",
+      "args": [
+        "run",
+        "k05",
+        "--mine",
+        "Status of ORD-1001"
+      ],
+      "presentation": {
+        "group": "k05 tool descriptions",
+        "order": 2
+      },
+      "env": {
+        "ANTHROPIC_PROFILE": "dev"
+      },
+      "envFile": "${workspaceFolder}/src/replicable/labs/agent-katas/.env"
+    },
+    {
+      "type": "debugpy",
+      "request": "launch",
+      "python": "${workspaceFolder}/src/replicable/labs/agent-katas/.venv/bin/python",
+      "cwd": "${workspaceFolder}/src/replicable/labs/agent-katas",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "name": "k05 live-score \u00b7 starter",
+      "module": "katas.cli",
+      "args": [
+        "live",
+        "k05",
+        "--starter",
+        "--runs",
+        "1",
+        "--verbose"
+      ],
+      "env": {
+        "ANTHROPIC_PROFILE": "dev"
+      },
+      "envFile": "${workspaceFolder}/src/replicable/labs/agent-katas/.env",
+      "presentation": {
+        "group": "k05 tool descriptions",
+        "order": 3
+      }
+    },
+    {
+      "type": "debugpy",
+      "request": "launch",
+      "python": "${workspaceFolder}/src/replicable/labs/agent-katas/.venv/bin/python",
+      "cwd": "${workspaceFolder}/src/replicable/labs/agent-katas",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "name": "k05 run \u00b7 starter  (real model: argument-format case)",
+      "module": "katas.cli",
+      "args": [
+        "run",
+        "k05",
+        "--starter",
+        "Status of ORD-1001"
+      ],
+      "presentation": {
+        "group": "k05 tool descriptions",
+        "order": 4
+      },
+      "env": {
+        "ANTHROPIC_PROFILE": "dev"
+      },
+      "envFile": "${workspaceFolder}/src/replicable/labs/agent-katas/.env"
+    },
+    {
+      "type": "debugpy",
+      "request": "launch",
+      "python": "${workspaceFolder}/src/replicable/labs/agent-katas/.venv/bin/python",
+      "cwd": "${workspaceFolder}/src/replicable/labs/agent-katas",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "name": "k05 live-score \u00b7 solution",
+      "module": "katas.cli",
+      "args": [
+        "live",
+        "k05",
+        "--solution",
+        "--runs",
+        "1",
+        "--verbose"
+      ],
+      "env": {
+        "ANTHROPIC_PROFILE": "dev"
+      },
+      "envFile": "${workspaceFolder}/src/replicable/labs/agent-katas/.env",
+      "presentation": {
+        "group": "k05 tool descriptions",
+        "order": 5
+      }
+    },
+    {
+      "type": "debugpy",
+      "request": "launch",
+      "python": "${workspaceFolder}/src/replicable/labs/agent-katas/.venv/bin/python",
+      "cwd": "${workspaceFolder}/src/replicable/labs/agent-katas",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "name": "k05 run \u00b7 solution  (real model: argument-format case)",
+      "module": "katas.cli",
+      "args": [
+        "run",
+        "k05",
+        "--solution",
+        "Status of ORD-1001"
+      ],
+      "presentation": {
+        "group": "k05 tool descriptions",
+        "order": 6
+      },
+      "env": {
+        "ANTHROPIC_PROFILE": "dev"
+      },
+      "envFile": "${workspaceFolder}/src/replicable/labs/agent-katas/.env"
+    },
+    {
+      "type": "debugpy",
+      "request": "launch",
+      "python": "${workspaceFolder}/src/replicable/labs/agent-katas/.venv/bin/python",
+      "cwd": "${workspaceFolder}/src/replicable/labs/agent-katas",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "name": "k06 live-score \u00b7 mine",
+      "module": "katas.cli",
+      "args": [
+        "live",
+        "k06",
+        "--mine",
+        "--runs",
+        "1",
+        "--verbose"
+      ],
+      "env": {
+        "ANTHROPIC_PROFILE": "dev"
+      },
+      "envFile": "${workspaceFolder}/src/replicable/labs/agent-katas/.env",
+      "presentation": {
+        "group": "k06 system prompt",
+        "order": 1
+      }
+    },
+    {
+      "type": "debugpy",
+      "request": "launch",
+      "python": "${workspaceFolder}/src/replicable/labs/agent-katas/.venv/bin/python",
+      "cwd": "${workspaceFolder}/src/replicable/labs/agent-katas",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "name": "k06 run \u00b7 mine  (real model: needs-human-approval rule)",
+      "module": "katas.cli",
+      "args": [
+        "run",
+        "k06",
+        "--mine",
+        "Order 1005 arrived with the wrong items. Please refund me $200."
+      ],
+      "presentation": {
+        "group": "k06 system prompt",
+        "order": 2
+      },
+      "env": {
+        "ANTHROPIC_PROFILE": "dev"
+      },
+      "envFile": "${workspaceFolder}/src/replicable/labs/agent-katas/.env"
+    },
+    {
+      "type": "debugpy",
+      "request": "launch",
+      "python": "${workspaceFolder}/src/replicable/labs/agent-katas/.venv/bin/python",
+      "cwd": "${workspaceFolder}/src/replicable/labs/agent-katas",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "name": "k06 live-score \u00b7 starter",
+      "module": "katas.cli",
+      "args": [
+        "live",
+        "k06",
+        "--starter",
+        "--runs",
+        "1",
+        "--verbose"
+      ],
+      "env": {
+        "ANTHROPIC_PROFILE": "dev"
+      },
+      "envFile": "${workspaceFolder}/src/replicable/labs/agent-katas/.env",
+      "presentation": {
+        "group": "k06 system prompt",
+        "order": 3
+      }
+    },
+    {
+      "type": "debugpy",
+      "request": "launch",
+      "python": "${workspaceFolder}/src/replicable/labs/agent-katas/.venv/bin/python",
+      "cwd": "${workspaceFolder}/src/replicable/labs/agent-katas",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "name": "k06 run \u00b7 starter  (real model: needs-human-approval rule)",
+      "module": "katas.cli",
+      "args": [
+        "run",
+        "k06",
+        "--starter",
+        "Order 1005 arrived with the wrong items. Please refund me $200."
+      ],
+      "presentation": {
+        "group": "k06 system prompt",
+        "order": 4
+      },
+      "env": {
+        "ANTHROPIC_PROFILE": "dev"
+      },
+      "envFile": "${workspaceFolder}/src/replicable/labs/agent-katas/.env"
+    },
+    {
+      "type": "debugpy",
+      "request": "launch",
+      "python": "${workspaceFolder}/src/replicable/labs/agent-katas/.venv/bin/python",
+      "cwd": "${workspaceFolder}/src/replicable/labs/agent-katas",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "name": "k06 live-score \u00b7 solution",
+      "module": "katas.cli",
+      "args": [
+        "live",
+        "k06",
+        "--solution",
+        "--runs",
+        "1",
+        "--verbose"
+      ],
+      "env": {
+        "ANTHROPIC_PROFILE": "dev"
+      },
+      "envFile": "${workspaceFolder}/src/replicable/labs/agent-katas/.env",
+      "presentation": {
+        "group": "k06 system prompt",
+        "order": 5
+      }
+    },
+    {
+      "type": "debugpy",
+      "request": "launch",
+      "python": "${workspaceFolder}/src/replicable/labs/agent-katas/.venv/bin/python",
+      "cwd": "${workspaceFolder}/src/replicable/labs/agent-katas",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "name": "k06 run \u00b7 solution  (real model: needs-human-approval rule)",
+      "module": "katas.cli",
+      "args": [
+        "run",
+        "k06",
+        "--solution",
+        "Order 1005 arrived with the wrong items. Please refund me $200."
+      ],
+      "presentation": {
+        "group": "k06 system prompt",
+        "order": 6
+      },
+      "env": {
+        "ANTHROPIC_PROFILE": "dev"
+      },
+      "envFile": "${workspaceFolder}/src/replicable/labs/agent-katas/.env"
+    },
+    {
+      "type": "debugpy",
+      "request": "launch",
+      "python": "${workspaceFolder}/src/replicable/labs/agent-katas/.venv/bin/python",
+      "cwd": "${workspaceFolder}/src/replicable/labs/agent-katas",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "name": "extra: test current file \u00b7 pick impl",
+      "module": "pytest",
+      "args": [
+        "${file}",
+        "-x",
+        "-vv",
+        "-s",
+        "--no-header",
+        "-p",
+        "no:cacheprovider"
+      ],
+      "env": {
+        "KATA_IMPL": "${input:impl}"
+      },
+      "presentation": {
+        "group": "extra",
+        "order": 1
+      }
+    },
+    {
+      "type": "debugpy",
+      "request": "launch",
+      "python": "${workspaceFolder}/src/replicable/labs/agent-katas/.venv/bin/python",
+      "cwd": "${workspaceFolder}/src/replicable/labs/agent-katas",
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "name": "extra: k01 run \u00b7 step INTO the Anthropic SDK (justMyCode off)",
+      "module": "katas.cli",
+      "args": [
+        "run",
+        "k01",
+        "${input:implFlag}",
+        "Where is order #1002?"
+      ],
+      "env": {
+        "ANTHROPIC_PROFILE": "dev"
+      },
+      "envFile": "${workspaceFolder}/src/replicable/labs/agent-katas/.env",
+      "presentation": {
+        "group": "extra",
+        "order": 2
+      }
+    },
+    {
+      "type": "debugpy",
+      "request": "launch",
+      "python": "${workspaceFolder}/src/replicable/labs/agent-katas/.venv/bin/python",
+      "cwd": "${workspaceFolder}/src/replicable/labs/agent-katas",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "name": "extra: kata list",
+      "module": "katas.cli",
+      "args": [
+        "list"
+      ],
+      "presentation": {
+        "group": "extra",
+        "order": 3
+      }
+    }
+  ],
+  "inputs": [
+    {
+      "id": "impl",
+      "type": "pickString",
+      "description": "Which file to test?",
+      "default": "mine",
+      "options": [
+        "mine",
+        "starter",
+        "solution"
+      ]
+    },
+    {
+      "id": "implFlag",
+      "type": "pickString",
+      "description": "Which file to run?",
+      "default": "--mine",
+      "options": [
+        {
+          "label": "mine.py",
+          "value": "--mine"
+        },
+        {
+          "label": "starter.py",
+          "value": "--starter"
+        },
+        {
+          "label": "solution.py",
+          "value": "--solution"
+        }
+      ]
+    }
+  ]
+}

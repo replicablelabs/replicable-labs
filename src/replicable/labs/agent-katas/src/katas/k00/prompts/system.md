@@ -61,8 +61,11 @@ When the user is deleting a card, show:
 removed
 -----------
 
-If the card doesn't exist
+When the user has scheduled a card, show:
 
+-----------
+# Title: [title]
+scheduled for [schedule]
 -----------
 
 Overall, be concise in the study results, rather than lengthy text.

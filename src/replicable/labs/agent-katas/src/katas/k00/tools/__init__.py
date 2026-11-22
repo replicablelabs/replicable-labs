@@ -6,23 +6,41 @@ from that function's signature and docstring.
 """
 
 from ..utils.utils import ToolError
-from . import create_card, delete_card, find_card, get_card, list_cards, schedule_card
-
-_MODULES = (create_card, delete_card, find_card, get_card, list_cards, schedule_card)
+from .create_card import create_card
+from .delete_card import delete_card
+from .find_card import find_card
+from .get_card import get_card
+from .list_cards import list_cards
+from .schedule_card import schedule_card
 
 # name -> decorated tool object (has .to_dict(), .call(), .func)
-TOOLS = {}
-for _module in _MODULES:
-    _name = _module.__name__.rpartition(".")[2]
-    TOOLS[_name] = getattr(_module, _name)
+TOOLS = {
+    "create_card": create_card,
+    "delete_card": delete_card,
+    "find_card": find_card,
+    "get_card": get_card,
+    "list_cards": list_cards,
+    "schedule_card": schedule_card,
+}
 
 SCHEMAS = [tool.to_dict() for tool in TOOLS.values()]
 
 
 def run_tool(name: str, tool_input: dict) -> tuple[str, bool]:
-    """Run one tool call and return (content, is_error) for a tool_result block.
+    """Execute one tool call requested by the model.
 
-    Never raises: a bad call becomes an error result the model can read and retry.
+    Looks `name` up in `TOOLS` and calls it with `tool_input` (the `tool_use`
+    block's `input` dict).
+
+    Returns a `(content, is_error)` pair that maps onto a `tool_result` block:
+    - `content`: the tool's JSON output on success, or a plain-text error message
+      on failure.
+    - `is_error`: `True` when the call failed, so the model knows not to treat
+      `content` as a real result.
+
+    Never raises. Each of these becomes an error result the model can read and
+    retry: an unknown tool name, a `ToolError` raised by the tool, bad arguments
+    (`TypeError` / `ValueError`), and any other exception the tool throws.
     """
     tool = TOOLS.get(name)
     if tool is None:

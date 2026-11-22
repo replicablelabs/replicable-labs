@@ -2,6 +2,8 @@ from pathlib import Path
 
 from rich.pretty import pprint
 
+from .log import logger
+
 
 class ToolError(Exception):
     """Raised by a tool for bad arguments; the loop turns it into an is_error tool_result."""
@@ -35,6 +37,15 @@ def get_system_prompt():
     )
 
 
+def get_max_tokens_cutover_prompt():
+    """Read the system prompt from `k00/prompts/system.md`, stripped of surrounding whitespace."""
+    return (
+        (Path(__file__).parent.parent / "prompts" / "max_tokens_merge.md")
+        .read_text(encoding="utf-8")
+        .strip()
+    )
+
+
 def set_max_tokens_cap():
     """Return the starting `max_tokens` for a request.
 
@@ -51,7 +62,7 @@ def reset_max_tokens_cap():
     tools), so a bump made to survive one truncation does not stick for the rest
     of the session. Currently just `set_max_tokens_cap()`.
     """
-    print("reset tokens cap")
+    logger.debug("reset tokens cap")
     return set_max_tokens_cap()
 
 
@@ -63,5 +74,5 @@ def increase_max_tokens_cap(max_tokens):
     with more room. Doubles `max_tokens`. No upper bound yet: callers should
     clamp to the model's maximum output tokens.
     """
-    print(f"increased tokens cap to {max_tokens * 2}")
+    logger.debug("increased tokens cap to %d", max_tokens * 2)
     return max_tokens * 2

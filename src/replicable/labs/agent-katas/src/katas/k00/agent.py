@@ -10,13 +10,12 @@ from anthropic import Anthropic
 from .api import request, response
 from .tools import SCHEMAS, run_tool
 from .utils import agent, utils
+from .utils.log import logger
 
 MODEL = "claude-haiku-5-5"
 SYSTEM = utils.get_system_prompt()
 MAX_STEPS = 100
-MAX_TOKENS_CUTOVER_MESSAGE = (
-    "Continue exactly from where you left off. Do not add tokens in between."
-)
+MAX_TOKENS_CUTOVER_MESSAGE = utils.get_max_tokens_cutover_prompt()
 
 
 def main(client: Anthropic, args: list[str]) -> None:
@@ -27,13 +26,13 @@ def main(client: Anthropic, args: list[str]) -> None:
 
     # agent loop
     session = []
-    max_tokens_cutover_index = len(session)
+    max_tokens_cutover_index = None  # set only while a continuation run is open
     max_tokens_capped = False
     session.append({"role": request.Role.USER, "content": prompt})
     res = ""
     for _ in range(MAX_STEPS):
         session_metadata["turns"] += 1
-        print(f"turn {session_metadata['turns']}")
+        logger.debug("turn %d", session_metadata["turns"])
         resp = client.messages.create(
             model=MODEL,
             max_tokens=max_tokens,
@@ -41,11 +40,11 @@ def main(client: Anthropic, args: list[str]) -> None:
             system=SYSTEM,
             tools=SCHEMAS,
         )
-        print(
-            f"  stop_reason={resp.stop_reason} "
-            f"max_tokens={max_tokens} "
-            f"output_tokens={resp.usage.output_tokens} "
-            f"blocks={[block.type for block in resp.content]}"
+        logger.debug(
+            "    stop_reason=%s output_tokens=%d blocks=%s",
+            resp.stop_reason,
+            resp.usage.output_tokens,
+            [block.type for block in resp.content],
         )
 
         # turn finalised ------------------------------------------------------
@@ -80,26 +79,35 @@ def main(client: Anthropic, args: list[str]) -> None:
                     "content": utils.blocks_to_dicts(resp.content),
                 }
             )
+            if max_tokens_cutover_index is not None:
+                # this response closes a continuation run: merge it with the fragments
+                merged = agent.concatenate_interrupted_responses(
+                    session, max_tokens_cutover_index
+                )
+                session.append({"role": request.Role.ASSISTANT, "content": merged})
+                max_tokens_cutover_index = None
             session.append({"role": request.Role.USER, "content": tool_results})
 
         elif resp.stop_reason == response.StopReason.END_TURN:
-            res = []
-            resp_content = utils.blocks_to_dicts(resp.content)
-
-            if max_tokens_capped:
-                # built response content from last interrupted responses
-                max_tokens = utils.reset_max_tokens_cap()
-                max_tokens_capped = False
-                resp_content = agent.concatenate_interrupted_responses(
+            session.append(
+                {
+                    "role": request.Role.ASSISTANT,
+                    "content": utils.blocks_to_dicts(resp.content),
+                }
+            )
+            if max_tokens_cutover_index is not None:
+                # this response closes a continuation run: merge it with the fragments
+                merged = agent.concatenate_interrupted_responses(
                     session, max_tokens_cutover_index
                 )
+                session.append({"role": request.Role.ASSISTANT, "content": merged})
+                max_tokens_cutover_index = None
 
-            res = [
-                block.text
-                for block in resp_content
+            res = "".join(
+                block["text"]
+                for block in session[-1]["content"]
                 if block["type"] == response.BlockType.TEXT
-            ]
-
+            )
             break
 
         elif resp.stop_reason == response.StopReason.PAUSE_TURN:
@@ -114,8 +122,6 @@ def main(client: Anthropic, args: list[str]) -> None:
             # the 'continue' message, and then strip the session of these requests
             # and concatenating the responses. To do this, we are tracking the index
             # where the first response was externally interrupted.
-            max_tokens_cutover_index = len(session)
-
             text_blocks_only = utils.blocks_to_dicts(
                 list(
                     filter(
@@ -127,6 +133,9 @@ def main(client: Anthropic, args: list[str]) -> None:
             if text_blocks_only:
                 # if there was anything else in content that will have to be concatenated
                 # further on
+                if max_tokens_cutover_index is None:
+                    # first truncation of this run: remember where it starts
+                    max_tokens_cutover_index = len(session)
                 session.append(
                     {"role": request.Role.ASSISTANT, "content": text_blocks_only}
                 )
@@ -142,11 +151,14 @@ def main(client: Anthropic, args: list[str]) -> None:
                 max_tokens_capped = True
 
         elif resp.stop_reason == response.StopReason.REFUSAL:
-            print(f"  refusal: {resp.stop_details}")
-            pass
+            # resending the same request would be refused again: stop here
+            logger.error("refused: %s", resp.stop_details)
+            break
 
         elif resp.stop_reason == response.StopReason.MODEL_CONTEXT_WINDOW_EXCEEDED:
-            pass
+            # the history only grows, so a retry cannot succeed: stop here
+            logger.error("context window exceeded")
+            break
 
     print(res)
     print(session_metadata)

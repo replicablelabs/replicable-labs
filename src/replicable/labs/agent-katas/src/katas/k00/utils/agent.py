@@ -1,3 +1,6 @@
+from .log import logger
+
+
 def concatenate_interrupted_responses(session, index):
     """Remove a run of continuations from `session` and return their merged content.
 
@@ -33,4 +36,13 @@ def concatenate_interrupted_responses(session, index):
         blocks.insert(0, {"type": "text", "text": prefix})
 
     del session[index:]
+
+    logger.debug(
+        "    concatenated %d earlier assistant message(s) into the final one",
+        len(earlier),
+    )
+    logger.debug("    earlier text kept: %r", prefix)
+    logger.debug("    final blocks: %s", [block["type"] for block in final["content"]])
+    logger.debug("    merged blocks: %s", [block["type"] for block in blocks])
+
     return blocks

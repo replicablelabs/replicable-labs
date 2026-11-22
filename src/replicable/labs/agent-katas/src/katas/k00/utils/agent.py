@@ -1,8 +1,5 @@
-from ..api import request
-
-
 def concatenate_interrupted_responses(session, index):
-    """Collapse a run of continuations into one assistant message.
+    """Remove a run of continuations from `session` and return their merged content.
 
     `index` is the position in `session` of the first truncated assistant message.
     From there the messages strictly alternate: assistant, "continue" user,
@@ -15,12 +12,10 @@ def concatenate_interrupted_responses(session, index):
     response; any other blocks of the final response (e.g. a `tool_use`) are kept
     in order. The "continue" user messages are dropped.
 
-    Returns a new list; `session` is not modified. If `index` is None, returns
-    `session` unchanged.
+    Mutates `session`: every message from `index` onwards is deleted. Returns the
+    merged list of content blocks, for the caller to append back as one assistant
+    message: `{"role": ASSISTANT, "content": returned_blocks}`.
     """
-    if index == len(session):
-        return session
-
     assistants = session[index::2]
     earlier, final = assistants[:-1], assistants[-1]
 
@@ -37,4 +32,5 @@ def concatenate_interrupted_responses(session, index):
     elif prefix:
         blocks.insert(0, {"type": "text", "text": prefix})
 
-    return session[:index] + [{"role": request.Role.ASSISTANT, "content": blocks}]
+    del session[index:]
+    return blocks

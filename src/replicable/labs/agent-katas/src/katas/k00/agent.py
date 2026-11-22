@@ -14,21 +14,26 @@ from .utils import agent, utils
 MODEL = "claude-haiku-5-5"
 SYSTEM = utils.get_system_prompt()
 MAX_STEPS = 100
+MAX_TOKENS_CUTOVER_MESSAGE = (
+    "Continue exactly from where you left off. Do not add tokens in between."
+)
 
 
 def main(client: Anthropic, args: list[str]) -> None:
     """run the agent"""
     prompt = " ".join(args) or "Say hello in five words."
-    max_tokens = utils.set_max_tokens()
+    max_tokens = utils.set_max_tokens_cap()
     session_metadata = {"turns": 0, "tool_calls": []}
 
     # agent loop
     session = []
-    max_tokens_cutover = len(session)
+    max_tokens_cutover_index = len(session)
+    max_tokens_capped = False
     session.append({"role": request.Role.USER, "content": prompt})
     res = ""
     for _ in range(MAX_STEPS):
         session_metadata["turns"] += 1
+        print(f"turn {session_metadata['turns']}")
         resp = client.messages.create(
             model=MODEL,
             max_tokens=max_tokens,
@@ -36,10 +41,20 @@ def main(client: Anthropic, args: list[str]) -> None:
             system=SYSTEM,
             tools=SCHEMAS,
         )
+        print(
+            f"  stop_reason={resp.stop_reason} "
+            f"max_tokens={max_tokens} "
+            f"output_tokens={resp.usage.output_tokens} "
+            f"blocks={[block.type for block in resp.content]}"
+        )
 
         # turn finalised ------------------------------------------------------
         # execute tools? Generate request message
         if resp.stop_reason == response.StopReason.TOOL_USE:
+            if max_tokens_capped:
+                max_tokens = utils.reset_max_tokens_cap()
+                max_tokens_capped = False
+
             tools = [
                 block
                 for block in resp.content
@@ -59,16 +74,32 @@ def main(client: Anthropic, args: list[str]) -> None:
                 )
 
             # appending the tools results request immediately after the model response
-            session.append({"role": request.Role.ASSISTANT, "content": resp.content})
+            session.append(
+                {
+                    "role": request.Role.ASSISTANT,
+                    "content": utils.blocks_to_dicts(resp.content),
+                }
+            )
             session.append({"role": request.Role.USER, "content": tool_results})
 
         elif resp.stop_reason == response.StopReason.END_TURN:
-            utils.show(resp)
+            res = []
+            resp_content = utils.blocks_to_dicts(resp.content)
+
+            if max_tokens_capped:
+                # built response content from last interrupted responses
+                max_tokens = utils.reset_max_tokens_cap()
+                max_tokens_capped = False
+                resp_content = agent.concatenate_interrupted_responses(
+                    session, max_tokens_cutover_index
+                )
+
             res = [
                 block.text
-                for block in resp.content
-                if block.type == response.BlockType.TEXT
+                for block in resp_content
+                if block["type"] == response.BlockType.TEXT
             ]
+
             break
 
         elif resp.stop_reason == response.StopReason.PAUSE_TURN:
@@ -79,21 +110,39 @@ def main(client: Anthropic, args: list[str]) -> None:
 
         # turn could not finalise ---------------------------------------------
         elif resp.stop_reason == response.StopReason.MAX_TOKENS:
-            max_tokens_cutover = len(session)
-            concatenate_content = agent.concatenate_interrupted_responses(
-                session, max_tokens_cutover
+            # we are going to save to the session pairs (response, request) with
+            # the 'continue' message, and then strip the session of these requests
+            # and concatenating the responses. To do this, we are tracking the index
+            # where the first response was externally interrupted.
+            max_tokens_cutover_index = len(session)
+
+            text_blocks_only = utils.blocks_to_dicts(
+                list(
+                    filter(
+                        lambda block: block.type == response.BlockType.TEXT,
+                        resp.content,
+                    )
+                )
             )
-            session.append(
-                {"role": request.Role.ASSISTANT, "content": concatenate_content}
-            )
-            session.append(
-                {
-                    "role": request.Role.USER,
-                    "content": "continue exactly from where you left off",
-                }
-            )
+            if text_blocks_only:
+                # if there was anything else in content that will have to be concatenated
+                # further on
+                session.append(
+                    {"role": request.Role.ASSISTANT, "content": text_blocks_only}
+                )
+                session.append(
+                    {
+                        "role": request.Role.USER,
+                        "content": MAX_TOKENS_CUTOVER_MESSAGE,
+                    }
+                )
+            else:
+                # if there were only tools, it is required to increased the max tokens cap
+                max_tokens = utils.increase_max_tokens_cap(max_tokens)
+                max_tokens_capped = True
 
         elif resp.stop_reason == response.StopReason.REFUSAL:
+            print(f"  refusal: {resp.stop_details}")
             pass
 
         elif resp.stop_reason == response.StopReason.MODEL_CONTEXT_WINDOW_EXCEEDED:

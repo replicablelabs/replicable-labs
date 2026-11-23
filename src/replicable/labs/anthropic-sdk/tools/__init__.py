@@ -5,6 +5,8 @@ function with the same name. Its name, description and input schema all come
 from that function's signature and docstring.
 """
 
+from langsmith import traceable
+
 from utils.utils import ToolError
 from .create_card import create_card
 from .delete_card import delete_card
@@ -26,6 +28,7 @@ TOOLS = {
 SCHEMAS = [tool.to_dict() for tool in TOOLS.values()]
 
 
+@traceable(run_type="tool")
 def run_tool(name: str, tool_input: dict) -> tuple[str, bool]:
     """Execute one tool call requested by the model.
 

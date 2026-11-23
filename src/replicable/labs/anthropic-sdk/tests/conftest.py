@@ -1,11 +1,15 @@
 """Shared fixtures for the tests."""
 
 import json
+import os
 
 import pytest
 
-import db
-from tools import run_tool
+# Tests never send traces, even if the shell exports LANGSMITH_TRACING.
+os.environ["LANGSMITH_TRACING"] = "false"
+
+import db  # noqa: E402
+from tools import run_tool  # noqa: E402
 
 
 @pytest.fixture(autouse=True)

@@ -5,6 +5,7 @@ description = "A sandbox for building an Anthropic tool-use agent (card tools ov
 requires-python = ">=3.11"
 dependencies = [
     "anthropic",
+    "langsmith>=0.16.0",
     "pytest",
     "python-dotenv",
     "rich>=15.0.0",

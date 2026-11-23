@@ -49,7 +49,7 @@ and the tool schemas), then dispatches on `stop_reason` to a handler in [`handle
 | `pause_turn`, `stop_sequence` | not handled yet |
 
 `max_tokens` has a second recovery, stitching (keep the text, send "continue", merge the fragments). It is off by default
-because it is unreliable; `K00_MAX_TOKENS_STRATEGY=continue` turns it on.
+because it is unreliable; `MAX_TOKENS_STRATEGY=continue` turns it on.
 
 ## Things to edit
 

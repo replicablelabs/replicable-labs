@@ -20,7 +20,7 @@ def debug_enabled() -> bool:
     return os.environ.get("DEBUG", "").strip().lower() in _TRUTHY
 
 
-logger = logging.getLogger("k00")
+logger = logging.getLogger("anthropic-sdk")
 logger.propagate = False
 if not logger.handlers:
     _handler = logging.StreamHandler(sys.stderr)

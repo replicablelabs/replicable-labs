@@ -26,7 +26,7 @@ THINKING = block("thinking", thinking="...")
 
 @pytest.fixture(autouse=True)
 def no_env_strategy(monkeypatch):
-    monkeypatch.delenv("K00_MAX_TOKENS_STRATEGY", raising=False)
+    monkeypatch.delenv("MAX_TOKENS_STRATEGY", raising=False)
 
 
 def test_default_strategy_is_retry():
@@ -34,7 +34,7 @@ def test_default_strategy_is_retry():
 
 
 def test_strategy_comes_from_the_environment(monkeypatch):
-    monkeypatch.setenv("K00_MAX_TOKENS_STRATEGY", "continue")
+    monkeypatch.setenv("MAX_TOKENS_STRATEGY", "continue")
     assert AgentState.start("hi").max_tokens_strategy is MaxTokensStrategy.CONTINUE
 
 

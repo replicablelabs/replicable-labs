@@ -7,7 +7,7 @@ from enum import StrEnum
 from api import request
 from utils import agent, utils
 
-STRATEGY_ENV_VAR = "K00_MAX_TOKENS_STRATEGY"
+STRATEGY_ENV_VAR = "MAX_TOKENS_STRATEGY"
 
 
 class MaxTokensStrategy(StrEnum):
@@ -25,7 +25,7 @@ class MaxTokensStrategy(StrEnum):
 
 
 def _strategy_from_env() -> MaxTokensStrategy:
-    """`K00_MAX_TOKENS_STRATEGY` (`retry` or `continue`); `retry` when unset."""
+    """`MAX_TOKENS_STRATEGY` (`retry` or `continue`); `retry` when unset."""
     return MaxTokensStrategy(os.environ.get(STRATEGY_ENV_VAR, "retry").strip().lower())
 
 
@@ -37,7 +37,7 @@ class AgentState:
     - `max_tokens`: the cap for the next request.
     - `max_tokens_capped`: True after a bump, so the cap is reset once a turn completes.
     - `max_tokens_strategy`: how truncation is recovered. Defaults to the
-      `K00_MAX_TOKENS_STRATEGY` environment variable, else `retry`; pass it to
+      `MAX_TOKENS_STRATEGY` environment variable, else `retry`; pass it to
       `start()` to choose per run (e.g. from an eval harness).
     - `cutover_index`: position in `session` of the first truncated assistant message
       of an open "continue" run, or None when no run is open. Only used by the

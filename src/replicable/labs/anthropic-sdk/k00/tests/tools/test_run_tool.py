@@ -2,7 +2,7 @@
 
 import pytest
 
-from katas.k00.tools import run_tool
+from k00.tools import run_tool
 
 
 def test_run_tool_reports_bad_calls_as_errors():
@@ -14,7 +14,7 @@ def test_run_tool_reports_bad_calls_as_errors():
 
 def test_tools_must_return_a_result_model():
     """@tool rejects a function that returns anything but a result model."""
-    from katas.k00.tools.base import tool
+    from k00.tools.base import tool
 
     @tool
     def bad() -> str:

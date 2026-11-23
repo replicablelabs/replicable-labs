@@ -8,8 +8,14 @@ import argparse
 import os
 import re
 import sys
+from pathlib import Path
 
-from .style import die, dim, pretty_tracebacks
+from dotenv import load_dotenv
+
+from style import die, dim, pretty_tracebacks
+
+# Credentials: the lab's .env, if present. Exported shell variables take precedence.
+load_dotenv(Path(__file__).resolve().parent / ".env", override=False)
 
 
 def _client():
@@ -28,7 +34,7 @@ def cmd_run(a):
     """`kata run`: validate the kata name, then call `main(client, args)` in k00/agent.py."""
     if not re.fullmatch(r"k?0+", a.kata.strip().lower()):
         die(f"unknown kata {a.kata!r}; the only one is k00")
-    from .k00 import agent
+    from k00 import agent
 
     if not hasattr(agent, "main"):
         die("k00/agent.py needs a `main(client, args)` function.")

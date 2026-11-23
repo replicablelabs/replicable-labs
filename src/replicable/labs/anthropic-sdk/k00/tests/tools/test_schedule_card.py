@@ -1,6 +1,6 @@
 """schedule_card tool."""
 
-from katas.k00.tools.schemas import Status
+from k00.tools.schemas import Status
 
 
 def test_schedule_card(call):

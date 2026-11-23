@@ -3,8 +3,8 @@
 import inspect
 
 import pytest
-from katas.k00.tools import SCHEMAS, TOOLS
-from katas.k00.tools.schemas import Status
+from k00.tools import SCHEMAS, TOOLS
+from k00.tools.schemas import Status
 
 TOTAL_TOOLS_SO_FAR = 6
 
@@ -58,14 +58,14 @@ def test_every_status_a_tool_returns_is_documented(call, tool, args, status):
 
 
 def test_every_status_is_exercised_by_a_case():
-    """Test whether every member of katas.k00.tools.schemas.Status has a case in
+    """Test whether every member of k00.tools.schemas.Status has a case in
     STATUS_CASES, such that new status can't go untested.
     """
     assert {status for _, _, status in STATUS_CASES} == set(Status)
 
 
 def test_every_status_in_the_contract_is_documented_by_some_tool():
-    """Test whether every member of katas.k00.tools.schemas.Status is described
+    """Test whether every member of k00.tools.schemas.Status is described
     by at least one tool, such that statuses aren't defined without a purpose.
     """
     descriptions = " ".join(s["description"] for s in SCHEMAS)

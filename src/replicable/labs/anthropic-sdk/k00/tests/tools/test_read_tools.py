@@ -1,6 +1,6 @@
 """The read-only tools: list_cards, get_card, find_card."""
 
-from katas.k00.tools.schemas import Status
+from k00.tools.schemas import Status
 
 
 def test_list_cards(call):

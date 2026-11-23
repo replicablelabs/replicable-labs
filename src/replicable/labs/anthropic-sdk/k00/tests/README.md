@@ -4,10 +4,10 @@ Unit tests for the k00 sandbox.
 
 ## Run them
 
-From the lab directory (`src/replicable/labs/agent-katas`):
+From the lab directory (`src/replicable/labs/anthropic-sdk`):
 
 ```bash
-cd src/replicable/labs/agent-katas
+cd src/replicable/labs/anthropic-sdk
 uv run pytest                     # only k00
 uv run pytest -v                  # one line per test
 uv run pytest -x                  # stop at the first failure
@@ -16,14 +16,14 @@ uv run pytest -x                  # stop at the first failure
 Run one area, one file or one test:
 
 ```bash
-cd src/replicable/labs/agent-katas
-uv run pytest src/katas/k00/tests/db
-uv run pytest src/katas/k00/tests/tools/test_create_card.py
-uv run pytest src/katas/k00/tests/test_schemas.py::test_every_status_is_exercised_by_a_case
-uv run pytest src/katas/k00 -k "not_found"      # tests whose name or parameters match
+cd src/replicable/labs/anthropic-sdk
+uv run pytest k00/tests/db
+uv run pytest k00/tests/tools/test_create_card.py
+uv run pytest k00/tests/test_schemas.py::test_every_status_is_exercised_by_a_case
+uv run pytest k00 -k "not_found"      # tests whose name or parameters match
 ```
 
-`pyproject.toml` sets `testpaths = ["src/katas"]` and `--import-mode=importlib`, so a plain
+`pyproject.toml` sets `testpaths = ["k00"]` and `--import-mode=importlib`, so a plain
 `pytest` finds every kata's tests and two katas can both have a `test_tools.py`.
 
 ## Layout

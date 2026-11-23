@@ -1,6 +1,6 @@
 """Fuzzy card search."""
 
-from katas.k00 import db
+from k00 import db
 
 
 def test_fuzzy_search_ranks_and_scores():

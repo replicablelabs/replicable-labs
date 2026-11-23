@@ -41,10 +41,6 @@ def main(client: Anthropic, args: list[str]) -> None:
         )
 
         handler = HANDLERS.get(resp.stop_reason)
-        if handler is None:
-            # an unknown stop reason would resend the same request forever
-            logger.error("unhandled stop_reason=%s", resp.stop_reason)
-            break
         if handler(state, resp):
             break
 

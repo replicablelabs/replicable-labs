@@ -1,6 +1,6 @@
 """create_card: created / exists / replaced."""
 
-from katas.k00.tools.schemas import Status
+from k00.tools.schemas import Status
 
 
 def test_create_card_flow(call):

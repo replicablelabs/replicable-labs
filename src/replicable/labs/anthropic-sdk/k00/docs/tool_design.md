@@ -53,7 +53,7 @@ k00/
   docs/                these notes: tool design, system prompt checklist, evals
 ```
 
-Tests live outside this folder, in the lab's `tests/test_k00.py` (run `uv run pytest tests/test_k00.py` from `src/replicable/labs/agent-katas`): db behaviour, tool results, and a check that each definition matches its signature and docstring.
+Tests live outside this folder, in the lab's `tests/test_k00.py` (run `uv run pytest tests/test_k00.py` from `src/replicable/labs/anthropic-sdk`): db behaviour, tool results, and a check that each definition matches its signature and docstring.
 
 ## Defining tools from docstrings (`@beta_tool`)
 

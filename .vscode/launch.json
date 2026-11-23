@@ -1,6 +1,6 @@
 // Run and Debug (Cmd+Shift+D). Assumes VS Code is opened at the repo root; if you open the lab folder,
-// replace ${workspaceFolder}/src/replicable/labs/agent-katas with ${workspaceFolder}.
-// Credentials: the lab's .env is loaded automatically (katas/__init__.py). To use an `ant` profile instead,
+// replace ${workspaceFolder}/src/replicable/labs/anthropic-sdk with ${workspaceFolder}.
+// Credentials: the lab's .env is loaded automatically (cli.py). To use an `ant` profile instead,
 // export ANTHROPIC_PROFILE in your shell before launching VS Code, or add it under "env" below.
 {
   "version": "0.2.0",
@@ -16,46 +16,46 @@
     {
       "type": "debugpy",
       "request": "launch",
-      "python": "${workspaceFolder}/src/replicable/labs/agent-katas/.venv/bin/python",
-      "cwd": "${workspaceFolder}/src/replicable/labs/agent-katas",
+      "python": "${workspaceFolder}/src/replicable/labs/anthropic-sdk/.venv/bin/python",
+      "cwd": "${workspaceFolder}/src/replicable/labs/anthropic-sdk",
       "console": "integratedTerminal",
       "justMyCode": true,
       "name": "k00 run (real model)",
-      "module": "katas",
+      "module": "cli",
       "args": ["run", "k00", "Create a card about the capital of France, then schedule it for 2026-12-01 at 9am."]
     },
     {
       "type": "debugpy",
       "request": "launch",
-      "python": "${workspaceFolder}/src/replicable/labs/agent-katas/.venv/bin/python",
-      "cwd": "${workspaceFolder}/src/replicable/labs/agent-katas",
+      "python": "${workspaceFolder}/src/replicable/labs/anthropic-sdk/.venv/bin/python",
+      "cwd": "${workspaceFolder}/src/replicable/labs/anthropic-sdk",
       "console": "integratedTerminal",
       "justMyCode": true,
       "name": "k00 run (ask for prompt)",
-      "module": "katas",
+      "module": "cli",
       "args": ["run", "k00", "${input:prompt}"]
     },
     {
       "type": "debugpy",
       "request": "launch",
-      "python": "${workspaceFolder}/src/replicable/labs/agent-katas/.venv/bin/python",
-      "cwd": "${workspaceFolder}/src/replicable/labs/agent-katas",
+      "python": "${workspaceFolder}/src/replicable/labs/anthropic-sdk/.venv/bin/python",
+      "cwd": "${workspaceFolder}/src/replicable/labs/anthropic-sdk",
       "console": "integratedTerminal",
       "justMyCode": false,
       "name": "k00 run (step into anthropic SDK)",
-      "module": "katas",
+      "module": "cli",
       "args": ["run", "k00", "${input:prompt}"]
     },
     {
       "type": "debugpy",
       "request": "launch",
-      "python": "${workspaceFolder}/src/replicable/labs/agent-katas/.venv/bin/python",
-      "cwd": "${workspaceFolder}/src/replicable/labs/agent-katas",
+      "python": "${workspaceFolder}/src/replicable/labs/anthropic-sdk/.venv/bin/python",
+      "cwd": "${workspaceFolder}/src/replicable/labs/anthropic-sdk",
       "console": "integratedTerminal",
       "justMyCode": true,
       "name": "k00 tests",
       "module": "pytest",
-      "args": ["src/katas/k00", "-vv", "-s", "--no-header", "-p", "no:cacheprovider"]
+      "args": ["k00", "-vv", "-s", "--no-header", "-p", "no:cacheprovider"]
     }
   ]
 }

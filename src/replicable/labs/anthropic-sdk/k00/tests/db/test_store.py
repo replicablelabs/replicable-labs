@@ -2,7 +2,7 @@
 
 import pytest
 
-from katas.k00 import db
+from k00 import db
 
 
 def test_seed_and_ids():

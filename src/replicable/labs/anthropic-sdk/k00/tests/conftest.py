@@ -4,8 +4,8 @@ import json
 
 import pytest
 
-from katas.k00 import db
-from katas.k00.tools import run_tool
+from k00 import db
+from k00.tools import run_tool
 
 
 @pytest.fixture(autouse=True)

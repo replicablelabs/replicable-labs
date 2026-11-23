@@ -5,11 +5,11 @@ k00 is a card-study agent: six tools (`create_card`, `delete_card`, `find_card`,
 
 ## Prerequisites
 
-Run everything from the lab folder (`src/replicable/labs/agent-katas`), not the repo root: `uv run` uses the nearest
+Run everything from the lab folder (`src/replicable/labs/anthropic-sdk`), not the repo root: `uv run` uses the nearest
 `pyproject.toml`, and the repo root has no `kata` command.
 
 ```bash
-cd src/replicable/labs/agent-katas
+cd src/replicable/labs/anthropic-sdk
 uv sync
 ```
 
@@ -35,7 +35,7 @@ Everything after `k00` is joined into the prompt. With no prompt it sends "Say h
 From the repo root, add `--project`:
 
 ```bash
-uv run --project src/replicable/labs/agent-katas kata run k00 "list my cards"
+uv run --project src/replicable/labs/anthropic-sdk kata run k00 "list my cards"
 ```
 
 ## What happens
@@ -62,7 +62,7 @@ block and `stop_reason: "tool_use"` in the output. Running the tool, returning a
 The unit tests cover the db and the tools and need no key:
 
 ```bash
-uv run pytest src/katas/k00 -q
+uv run pytest k00 -q
 ```
 
 See [`tests/README.md`](tests/README.md) for details, and [`docs/tool_design.md`](docs/tool_design.md) for the tool

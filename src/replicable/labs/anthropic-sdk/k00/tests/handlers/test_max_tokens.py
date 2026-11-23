@@ -4,9 +4,9 @@ from types import SimpleNamespace
 
 import pytest
 
-from katas.k00.handlers.max_tokens import on_max_tokens
-from katas.k00.state import AgentState, MaxTokensStrategy
-from katas.k00.utils import utils
+from k00.handlers.max_tokens import on_max_tokens
+from k00.state import AgentState, MaxTokensStrategy
+from k00.utils import utils
 
 
 def block(type_, **fields):

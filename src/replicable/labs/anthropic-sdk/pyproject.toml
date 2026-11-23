@@ -1,7 +1,7 @@
 [project]
 name = "anthropic-sdk"
 version = "0.1.0"
-description = "A sandbox for building an Anthropic tool-use agent (k00: card tools over the Messages API)"
+description = "A sandbox for building an Anthropic tool-use agent (card tools over the Messages API)"
 requires-python = ">=3.11"
 dependencies = [
     "anthropic",
@@ -18,12 +18,15 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.pytest.ini_options]
-testpaths = ["k00"]
+testpaths = ["tests"]
 addopts = "--import-mode=importlib"
 
-# Flat layout: cli.py, style.py and k00/ sit directly in the lab folder. They install
-# as the top-level modules `cli`, `style` and `k00`; an editable install puts the lab
-# folder itself on sys.path.
+# Flat layout: the code sits directly in the lab folder and installs as top-level
+# modules (`cli`, `agent`, `state`, `tools`, `utils`, ...). An editable install puts
+# the lab folder itself on sys.path.
 [tool.hatch.build.targets.wheel]
-only-include = ["cli.py", "style.py", "k00"]
+only-include = [
+    "cli.py", "style.py", "agent.py", "state.py",
+    "api", "db", "handlers", "prompts", "tools", "utils",
+]
 dev-mode-dirs = ["."]

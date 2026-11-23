@@ -8,7 +8,7 @@
     {
       "id": "prompt",
       "type": "promptString",
-      "description": "Prompt to send to the k00 agent",
+      "description": "Prompt to send to the card agent",
       "default": "Create a card about the capital of France, then schedule it for 2026-12-01 at 9am."
     }
   ],
@@ -20,9 +20,9 @@
       "cwd": "${workspaceFolder}/src/replicable/labs/anthropic-sdk",
       "console": "integratedTerminal",
       "justMyCode": true,
-      "name": "k00 run (real model)",
+      "name": "run (real model)",
       "module": "cli",
-      "args": ["run", "k00", "Create a card about the capital of France, then schedule it for 2026-12-01 at 9am."]
+      "args": ["run", "Create a card about the capital of France, then schedule it for 2026-12-01 at 9am."]
     },
     {
       "type": "debugpy",
@@ -31,9 +31,9 @@
       "cwd": "${workspaceFolder}/src/replicable/labs/anthropic-sdk",
       "console": "integratedTerminal",
       "justMyCode": true,
-      "name": "k00 run (ask for prompt)",
+      "name": "run (ask for prompt)",
       "module": "cli",
-      "args": ["run", "k00", "${input:prompt}"]
+      "args": ["run", "${input:prompt}"]
     },
     {
       "type": "debugpy",
@@ -42,9 +42,9 @@
       "cwd": "${workspaceFolder}/src/replicable/labs/anthropic-sdk",
       "console": "integratedTerminal",
       "justMyCode": false,
-      "name": "k00 run (step into anthropic SDK)",
+      "name": "run (step into anthropic SDK)",
       "module": "cli",
-      "args": ["run", "k00", "${input:prompt}"]
+      "args": ["run", "${input:prompt}"]
     },
     {
       "type": "debugpy",
@@ -53,9 +53,9 @@
       "cwd": "${workspaceFolder}/src/replicable/labs/anthropic-sdk",
       "console": "integratedTerminal",
       "justMyCode": true,
-      "name": "k00 tests",
+      "name": "tests",
       "module": "pytest",
-      "args": ["k00", "-vv", "-s", "--no-header", "-p", "no:cacheprovider"]
+      "args": ["tests", "-vv", "-s", "--no-header", "-p", "no:cacheprovider"]
     }
   ]
 }

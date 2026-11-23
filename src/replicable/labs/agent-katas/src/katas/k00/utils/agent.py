@@ -1,3 +1,4 @@
+from ..api import request, response
 from .log import logger
 
 
@@ -20,29 +21,25 @@ def concatenate_interrupted_responses(session, index):
     message: `{"role": ASSISTANT, "content": returned_blocks}`.
     """
     assistants = session[index::2]
-    earlier, final = assistants[:-1], assistants[-1]
 
-    prefix = "".join(
+    text = "".join(
         block["text"]
-        for message in earlier
+        for message in assistants
         for block in message["content"]
-        if block["type"] == "text"
+        if block["type"] == response.BlockType.TEXT
     )
 
-    blocks = list(final["content"])
-    if blocks and blocks[0]["type"] == "text":
-        blocks[0] = {**blocks[0], "text": prefix + blocks[0]["text"]}
-    elif prefix:
-        blocks.insert(0, {"type": "text", "text": prefix})
+    session[-1]["content"] = [
+        block
+        for block in session[-1]["content"]
+        if block["type"] != response.BlockType.TEXT
+    ]
 
+    final = session[-1]
+    final["content"].append({"type": response.BlockType.TEXT, "text": text})
+
+    # mutate session
     del session[index:]
 
-    logger.debug(
-        "    concatenated %d earlier assistant message(s) into the final one",
-        len(earlier),
-    )
-    logger.debug("    earlier text kept: %r", prefix)
-    logger.debug("    final blocks: %s", [block["type"] for block in final["content"]])
-    logger.debug("    merged blocks: %s", [block["type"] for block in blocks])
-
-    return blocks
+    logger.debug("    concatenated earlier assistant message(s) into a final one")
+    return final["content"]

@@ -4,6 +4,10 @@ from rich.pretty import pprint
 
 from .log import logger
 
+MAX_TOKENS_CEILING = 128_000
+"""The model's maximum output tokens (`claude-haiku-5-5`). A larger `max_tokens`
+cannot be requested, so retrying bigger stops being possible at this value."""
+
 
 class ToolError(Exception):
     """Raised by a tool for bad arguments; the loop turns it into an is_error tool_result."""
@@ -71,8 +75,10 @@ def increase_max_tokens_cap(max_tokens):
 
     Used when a `max_tokens` response had nothing worth keeping (e.g. only
     `tool_use` blocks, whose inputs may be cut off), so the same request is resent
-    with more room. Doubles `max_tokens`. No upper bound yet: callers should
-    clamp to the model's maximum output tokens.
+    with more room. Doubles `max_tokens`, clamped to `MAX_TOKENS_CEILING`. Callers
+    must check for the ceiling themselves: at the ceiling this returns the same
+    value, and resending would truncate again.
     """
-    logger.debug("increased tokens cap to %d", max_tokens * 2)
-    return max_tokens * 2
+    bigger = min(max_tokens * 2, MAX_TOKENS_CEILING)
+    logger.debug("increased tokens cap to %d", bigger)
+    return bigger

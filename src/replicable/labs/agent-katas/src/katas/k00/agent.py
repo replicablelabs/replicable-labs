@@ -8,7 +8,7 @@ calls the API and dispatches on `stop_reason`; what each stop reason means lives
 from anthropic import Anthropic
 
 from .handlers import HANDLERS
-from .state import LoopState
+from .state import AgentState
 from .tools import SCHEMAS
 from .utils import utils
 from .utils.log import logger
@@ -20,8 +20,8 @@ MAX_STEPS = 100
 
 def main(client: Anthropic, args: list[str]) -> None:
     """run the agent"""
-    prompt = " ".join(args) or "Say hello in five words."
-    state = LoopState.start(prompt)
+    prompt = " ".join(args) or "Hello, world?"
+    state = AgentState.start(prompt)
 
     for _ in range(MAX_STEPS):
         state.metadata["turns"] += 1

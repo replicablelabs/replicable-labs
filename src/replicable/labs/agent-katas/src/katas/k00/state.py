@@ -7,7 +7,7 @@ from .utils import agent, utils
 
 
 @dataclass
-class LoopState:
+class AgentState:
     """Everything the agent loop reads and writes between turns.
 
     - `session`: the messages resent on every request (plain dicts only).
@@ -27,7 +27,7 @@ class LoopState:
     result: str = ""
 
     @classmethod
-    def start(cls, prompt: str) -> "LoopState":
+    def start(cls, prompt: str) -> "AgentState":
         """A fresh run whose only message is the user's prompt."""
         state = cls()
         state.append_user(prompt)

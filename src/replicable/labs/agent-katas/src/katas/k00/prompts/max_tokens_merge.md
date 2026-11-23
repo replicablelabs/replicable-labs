@@ -1,1 +1,1 @@
-Continue exactly from where you left off. Do not add tokens in between.
+Continue from where you left off.

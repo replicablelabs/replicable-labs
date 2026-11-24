@@ -2,7 +2,8 @@
 
 A handler is `(state, resp) -> bool`: it updates the `AgentState` for the next
 request and returns True to stop the loop, False to send another request.
-`HANDLERS` maps each stop reason to its handler; the loop dispatches through it.
+`HANDLERS` maps each stop reason to its handler; the loop dispatches through it
+and falls back to `on_unknown`.
 """
 
 from collections.abc import Callable
@@ -12,7 +13,7 @@ from state import AgentState
 from .end_turn import on_end_turn
 from .max_tokens import on_max_tokens
 from .pause_turn import on_pause_turn
-from .stop import on_context_window_exceeded, on_refusal
+from .stop import on_context_window_exceeded, on_refusal, on_unknown
 from .stop_sequence import on_stop_sequence
 from .tool_use import on_tool_use
 

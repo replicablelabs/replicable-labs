@@ -14,3 +14,9 @@ def on_context_window_exceeded(state: AgentState, resp) -> bool:
     """The history only grows, so a retry cannot succeed."""
     logger.error("context window exceeded")
     return True
+
+
+def on_unknown(state: AgentState, resp) -> bool:
+    """A stop reason with no handler (new in the API, or missing): name it and stop."""
+    logger.error("unknown stop_reason: %r", resp.stop_reason)
+    return True

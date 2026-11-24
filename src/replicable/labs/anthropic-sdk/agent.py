@@ -8,7 +8,7 @@ calls the API and dispatches on `stop_reason`; what each stop reason means lives
 import tracing
 from anthropic import Anthropic
 from api.response import COMPLETED_TURN_REASONS
-from handlers import HANDLERS
+from handlers import HANDLERS, on_unknown
 from langsmith import traceable
 from langsmith.run_helpers import set_run_metadata
 from state import AgentState
@@ -65,7 +65,7 @@ def main(client: Anthropic, prompt: str) -> str:
             [block.type for block in resp.content],
         )
 
-        handler = HANDLERS.get(resp.stop_reason)
+        handler = HANDLERS.get(resp.stop_reason, on_unknown)
         if handler(state, resp):
             break
 

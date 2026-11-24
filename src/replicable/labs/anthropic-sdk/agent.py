@@ -7,6 +7,7 @@ calls the API and dispatches on `stop_reason`; what each stop reason means lives
 
 import tracing
 from anthropic import Anthropic
+from api.response import COMPLETED_TURN_REASONS
 from handlers import HANDLERS
 from langsmith import traceable
 from langsmith.run_helpers import set_run_metadata
@@ -38,8 +39,11 @@ def main(client: Anthropic, prompt: str) -> str:
     stop_reason = None
 
     for _ in range(MAX_STEPS):
-        state.metadata["turns"] += 1
-        logger.debug("turn %d", state.metadata["turns"])
+        # A step is one request, retries included; MAX_STEPS caps steps.
+        state.metadata["steps"] += 1
+        logger.debug(
+            "turn %d step %d", state.metadata["turns"], state.metadata["steps"]
+        )
 
         resp = client.messages.create(
             model=MODEL,
@@ -50,6 +54,9 @@ def main(client: Anthropic, prompt: str) -> str:
         )
 
         stop_reason = resp.stop_reason
+        # A turn is a step whose response completes a turn; discarded retries don't count.
+        if stop_reason in COMPLETED_TURN_REASONS:
+            state.metadata["turns"] += 1
 
         logger.debug(
             "    stop_reason=%s output_tokens=%d blocks=%s",
@@ -64,6 +71,7 @@ def main(client: Anthropic, prompt: str) -> str:
 
     set_run_metadata(
         model=MODEL,
+        steps=state.metadata["steps"],
         turns=state.metadata["turns"],
         stop_reason=stop_reason,
         tool_calls=len(state.metadata["tool_calls"]),

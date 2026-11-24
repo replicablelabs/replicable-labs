@@ -51,7 +51,9 @@ class AgentState:
     max_tokens_capped: bool = False
     max_tokens_strategy: MaxTokensStrategy = field(default_factory=_strategy_from_env)
     cutover_index: int | None = None
-    metadata: dict = field(default_factory=lambda: {"turns": 0, "tool_calls": []})
+    metadata: dict = field(
+        default_factory=lambda: {"steps": 0, "turns": 0, "tool_calls": []}
+    )
     result: str = ""
 
     @classmethod

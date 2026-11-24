@@ -55,6 +55,18 @@ class StopReason(StrEnum):
     The history is too long: shorten, summarise or compact it before retrying."""
 
 
+COMPLETED_TURN_REASONS = frozenset(
+    {
+        StopReason.END_TURN,
+        StopReason.TOOL_USE,
+        StopReason.PAUSE_TURN,
+        StopReason.STOP_SEQUENCE,
+    }
+)
+"""Stop reasons that complete a turn (see the table above). `max_tokens`, `refusal`
+and `model_context_window_exceeded` do not: the turn is cut short or refused."""
+
+
 class BlockType(StrEnum):
     """`block.type` for the content blocks in `response.content`.
 

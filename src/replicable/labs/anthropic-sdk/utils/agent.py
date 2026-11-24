@@ -1,6 +1,3 @@
-from anthropic import Anthropic
-from api import request, response
-
 from .log import logger
 
 
@@ -10,13 +7,15 @@ def concatenate_interrupted_responses(session, index):
     `index` is the position in `session` of the first truncated assistant message.
     From there the messages strictly alternate: assistant, "continue" user,
     assistant, "continue" user, ..., and the FINAL assistant response (the one that
-    ended the run) must already be appended, so it is the last message.
+    ended the run) must already be appended, so it is the last message. Each message's
+    `content` must be a list of dicts (see `blocks_to_dicts`).
 
-    Every block must already be a dict (see `blocks_to_dicts`). The earlier
-    assistant messages are text-only (their `tool_use` blocks were stripped). Their
-    text is concatenated, with no separator, onto the first text block of the final
-    response; any other blocks of the final response (e.g. a `tool_use`) are kept
-    in order. The "continue" user messages are dropped.
+    All assistant blocks are kept unchanged, in the order the model produced them,
+    and the "continue" user messages are dropped. Text blocks are not joined:
+    `[text "a"]` then `[text "b", tool_use]` gives `[text "a", text "b", tool_use]`.
+
+    Earlier text can therefore come before a `thinking` block of the final response.
+    Check that the API accepts this before turning on extended thinking.
 
     Mutates `session`: every message from `index` onwards is deleted. Returns the
     merged list of content blocks, for the caller to append back as one assistant
@@ -24,24 +23,15 @@ def concatenate_interrupted_responses(session, index):
     """
     assistants = session[index::2]
 
-    text = "".join(
-        block["text"]
-        for message in assistants
-        for block in message["content"]
-        if block["type"] == response.BlockType.TEXT
-    )
-
-    session[-1]["content"] = [
-        block
-        for block in session[-1]["content"]
-        if block["type"] != response.BlockType.TEXT
+    # `assistants` includes the final response, so this is every block once, in order.
+    # Adjacent text blocks stay separate; `on_end_turn` joins them for the result.
+    final = session[-1]
+    final["content"] = [
+        block for assistant in assistants for block in assistant["content"]
     ]
 
-    final = session[-1]
-    final["content"].append({"type": response.BlockType.TEXT, "text": text})
-
-    # mutate session
+    # Remove the whole run; the caller appends the merged message in its place.
     del session[index:]
 
-    logger.debug("    concatenated earlier assistant message(s) into a final one")
+    logger.debug("    joined responses' fragmented text")
     return final["content"]

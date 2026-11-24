@@ -77,7 +77,11 @@ tools/               one module per tool; each @tool docstring is the tool defin
 db/                  in-memory card store (models, store, search, seed)
 utils/               ToolError, logging, helpers
 docs/                notes: tool design, system prompt checklist, evals
-evals/               (empty for now)
+evals/               offline evals: call the real model, run with `uv run python -m evals.run`
+  cases/             inputs and expected results (LangSmith dataset examples)
+  graders.py         functions that judge a run
+  run.py             runs the cases as a LangSmith experiment
+  config.py          sends traces to LANGSMITH_EVALS_PROJECT
 tests/               no API key needed
   conftest.py        fresh db per test, `call` fixture for running a tool
   db/                store (ids, reset, delete) and search

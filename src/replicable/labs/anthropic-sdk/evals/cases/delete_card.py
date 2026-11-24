@@ -23,11 +23,11 @@ CASES = [
             # system prompt doesn't specify an answer format, so we need a judge
             "judge": [
                 {
-                    "question": "Does the reply say that no dentist card exists?",
+                    "question": "Does the reply say that no dentist card exists?",  # narrow
                     "expected": True,
                 },
                 {
-                    "question": "Does the reply claim that a card was deleted?",
+                    "question": "Does the reply claim that a card was deleted?",  # narrow
                     "expected": False,
                 },
             ],

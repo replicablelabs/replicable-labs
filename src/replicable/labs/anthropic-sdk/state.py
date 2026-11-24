@@ -44,6 +44,7 @@ class AgentState:
       `continue` strategy.
     - `metadata`: counters printed at the end of the run.
     - `result`: the final text answer, set by the `end_turn` handler.
+    - `stop_reason`: why the last response stopped; `end_turn` if the run finished.
     """
 
     session: list = field(default_factory=list)
@@ -55,6 +56,7 @@ class AgentState:
         default_factory=lambda: {"steps": 0, "turns": 0, "tool_calls": []}
     )
     result: str = ""
+    stop_reason: str | None = None
 
     @classmethod
     def start(cls, prompt: str, **fields) -> "AgentState":

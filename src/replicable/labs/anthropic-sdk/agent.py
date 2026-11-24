@@ -26,17 +26,22 @@ def _prompt_only(inputs: dict) -> dict:
     return {"prompt": inputs["prompt"]}
 
 
+def _result_only(state: AgentState) -> dict:
+    """Trace the final answer, not the whole state: the session is already in the child runs."""
+    return {"output": state.result}
+
+
 @traceable(
     name="agent",
     run_type="chain",
     tags=["anthropic-sdk", "replicablelabs-labs"],
     process_inputs=_prompt_only,
+    process_outputs=_result_only,
 )
-def main(client: Anthropic, prompt: str) -> str:
-    """Run the agent on `prompt` and return its final result."""
+def run(client: Anthropic, prompt: str) -> AgentState:
+    """Run the agent on `prompt` and return its final state."""
     client = tracing.wrap_client(client)
     state = AgentState.start(prompt)
-    stop_reason = None
 
     for _ in range(MAX_STEPS):
         # A step is one request, retries included; MAX_STEPS caps steps.
@@ -53,9 +58,9 @@ def main(client: Anthropic, prompt: str) -> str:
             tools=SCHEMAS,
         )
 
-        stop_reason = resp.stop_reason
+        state.stop_reason = resp.stop_reason
         # A turn is a step whose response completes a turn; discarded retries don't count.
-        if stop_reason in COMPLETED_TURN_REASONS:
+        if state.stop_reason in COMPLETED_TURN_REASONS:
             state.metadata["turns"] += 1
 
         logger.debug(
@@ -73,9 +78,15 @@ def main(client: Anthropic, prompt: str) -> str:
         model=MODEL,
         steps=state.metadata["steps"],
         turns=state.metadata["turns"],
-        stop_reason=stop_reason,
+        stop_reason=state.stop_reason,
         tool_calls=len(state.metadata["tool_calls"]),
     )
+    return state
+
+
+def main(client: Anthropic, prompt: str) -> str:
+    """Run the agent on `prompt`, print its result and counters, and return the result."""
+    state = run(client, prompt)
     print(state.result)
     print(state.metadata)
     return state.result

@@ -13,6 +13,15 @@ uv run pytest -v                  # one line per test
 uv run pytest -x                  # stop at the first failure
 ```
 
+Measure coverage (`pytest-cov` is fetched for the run, not added to the project):
+
+```bash
+uv run --with pytest-cov pytest --cov=. --cov-branch --cov-report=term-missing
+```
+
+Tests marked `xfail` describe behaviour the docs promise but the code does not have yet.
+They are strict: once the code is fixed they fail until the marker is removed.
+
 Run one area, one file or one test:
 
 ```bash
@@ -30,16 +39,33 @@ uv run pytest tests -k "not_found"      # tests whose name or parameters match
 
 ```
 conftest.py               shared fixtures (below)
+api/
+  test_response.py        which stop reasons complete a turn
 db/                       the in-memory card store
-  test_store.py           seed data, ids, reset, delete
-  test_search.py          fuzzy search ranking and scores
+  test_models.py          the stored Card
+  test_seed.py            the sample cards
+  test_store.py           ids, lookups, update, schedule, reset, delete
+  test_search.py          substring and fuzzy search
+handlers/                 one file per handler module
+  test_registry.py        every stop reason has its handler
+  test_end_turn.py, test_max_tokens.py, test_pause_turn.py,
+  test_stop.py, test_stop_sequence.py, test_tool_use.py
 tools/                    what each tool returns when the tool runner calls it
   test_create_card.py     created / exists / replaced
   test_delete_card.py
   test_schedule_card.py
   test_read_tools.py      list_cards, get_card, find_card
   test_run_tool.py        the tool runner and the @tool decorator
+utils/
+  test_agent.py           merging an answer that arrived in pieces
+  test_log.py             the DEBUG switch and the logger
+  test_utils.py           block conversion, prompts, the max_tokens cap
+test_agent.py             the loop, driven by a scripted model
+test_cli.py               the `kata` command
 test_schemas.py           the contract between the tool code and the model
+test_state.py             AgentState
+test_style.py             terminal colours
+test_tracing.py           LangSmith helpers
 ```
 
 `test_schemas.py` sits at the top because it spans every tool. It checks that what the
@@ -57,6 +83,11 @@ model is told matches what the code does:
 - `call(name, **kwargs)`: runs a tool through `run_tool` and returns `(result, is_error)`.
   On success `result` is the parsed JSON (`{"status": ..., "cards": [...]}`); on an error
   it is the error text.
+- `text`, `thinking`, `tool_call`: build content blocks, e.g. `tool_call("t1", "get_card", id="2")`.
+- `message`: builds a model response, e.g. `message("end_turn", text("Hello"))`.
+- `logs`: captures the lab's logger (`logs.text`).
+
+`conftest.py` also turns tracing off and stops `cli` from loading the lab's `.env`.
 
 ```python
 def test_get_card(call):

@@ -31,7 +31,7 @@ uv run kata run "create a card about the capital of France, then schedule it for
 uv run pytest -q                       # unit tests for the db, the tools and the handlers (no API key needed)
 ```
 
-Everything after `run` is joined into the prompt. With no prompt it sends "Say hello in five words." Output is coloured on a
+Everything after `run` is joined into the prompt. With no prompt it sends "Hello, world?" Output is coloured on a
 terminal (`NO_COLOR` disables it, `FORCE_COLOR` forces it). Set `DEBUG=1` for a turn-by-turn log on stderr.
 
 ## What happens
@@ -47,6 +47,7 @@ and the tool schemas), then dispatches on `stop_reason` to a handler in [`handle
 | `max_tokens` | discards the truncated response, doubles the cap (up to the model's output limit) and resends |
 | `refusal`, `model_context_window_exceeded` | logs the reason and stops |
 | `pause_turn`, `stop_sequence` | not handled yet |
+| anything else | logs the value and stops |
 
 `max_tokens` has a second recovery, stitching (keep the text, send "continue", merge the fragments). It is off by default
 because it is unreliable; `MAX_TOKENS_STRATEGY=continue` turns it on.
@@ -81,7 +82,9 @@ tests/               no API key needed
   conftest.py        fresh db per test, `call` fixture for running a tool
   db/                store (ids, reset, delete) and search
   tools/             one file per tool, or per group of read-only tools, plus the tool runner
-  handlers/          the max_tokens recovery strategies
+  handlers/          one file per stop-reason handler
+  api/, utils/       enums and helpers
+  test_*.py          the loop, cli, state, style, tracing
   test_schemas.py    each tool definition matches its code
 ```
 

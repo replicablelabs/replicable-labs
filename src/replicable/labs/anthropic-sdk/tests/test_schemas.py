@@ -1,4 +1,8 @@
-"""The contract between the tool code and the model: definitions match the code."""
+"""The contract between the tool code and the model.
+
+The model never sees the code, only each tool's name, description and parameters. If the
+two drift apart the model is misled, so these tests compare them for every tool.
+"""
 
 import inspect
 

@@ -59,4 +59,191 @@
 | `refusal` | declined for safety | stop and report; retrying won't help |
 | `model_context_window_exceeded` | history too long | stop; shorten history first |
 
-**Loop shape**: send → read `stop_reason` → dispatch to handler → append assistant content and tool results → repeat, capped by `MAX_STEPS`.
+**Loop shape**: send request → get response → read `stop_reason` → dispatch to handler → append assistant content and tool results → repeat, capped by `MAX_STEPS`.
+
+# Do Not Forget
+
+## Returning tool results
+
+Returning tool results requires contract:
+
+```json
+tool_results.append(
+    {
+        "type": request.BlockType.TOOL_RESULT,
+        "tool_use_id": block.id,
+        "content": content,
+        "is_error": is_error,                   # <-- IMPORTANT
+    }
+)
+```
+
+is `is_error` the content should explain what went wrong.
+
+## Pydantic
+
+```python
+from pydantic import BaseModel, Field
+
+# tools/schemas.py
+class Card(BaseModel):
+    """A card as shown to the model. Unset fields are left out of the JSON."""
+
+    id: str
+    title: str
+    content: Optional[str] = None
+    scheduled_at: Optional[str] = None
+    score: Optional[float] = None  # only on find_card results
+```
+
+## LangSmith
+
+Tracing `run_tool` for our tool executions (`tool`), all request/response exchanges (`wrap_client`), and the agent run (for grouping `chain`)
+
+```python
+from langsmith import traceable
+
+# agent.py
+@traceable(
+    name="agent",
+    run_type="chain", # <-- run_type CHAIN
+    tags=["anthropic-sdk", "replicablelabs-labs"],
+    process_inputs=_prompt_only,
+    process_outputs=_result_only,
+)
+def run(client: Anthropic, prompt: str) -> AgentState:
+    ...
+
+# tools/__init__.py
+@traceable(run_type="tool") # <-- run_type TOOL
+def run_tool(name: str, tool_input: dict) -> tuple[str, bool]:
+    ...
+
+# tracing.py
+from langsmith.run_trees import get_cached_client
+from langsmith.wrappers import wrap_anthropic
+
+
+def wrap_client(client):
+    """Return the Anthropic client with each `messages.create` call traced."""
+    return wrap_anthropic(client)
+
+
+def flush() -> None:
+    """Block until queued traces are sent."""
+    get_cached_client().flush()
+```
+
+## Agent Loop
+
+```python
+@traceable(
+    name="agent",
+    run_type="chain",
+    tags=["anthropic-sdk", "replicablelabs-labs"],
+    process_inputs=_prompt_only, # <-- into langsmith
+    process_outputs=_result_only, # <-- into langsmith
+)
+def run(client: Anthropic, prompt: str) -> AgentState:
+    """Run the agent on `prompt` and return its final state."""
+    client = tracing.wrap_client(client)
+    state = AgentState.start(prompt)
+
+    for _ in range(MAX_STEPS):
+        # A step is one request, retries included; MAX_STEPS caps steps.
+        state.metadata["steps"] += 1
+        logger.debug(
+            "turn %d step %d", state.metadata["turns"], state.metadata["steps"]
+        )
+
+        resp = client.messages.create(
+            model=MODEL,
+            max_tokens=state.max_tokens,
+            messages=state.session,
+            system=SYSTEM,
+            tools=SCHEMAS,
+        )
+
+        state.stop_reason = resp.stop_reason
+        # A turn is a step whose response completes a turn; discarded retries don't count.
+        if state.stop_reason in COMPLETED_TURN_REASONS:
+            state.metadata["turns"] += 1
+
+        logger.debug(
+            "    stop_reason=%s output_tokens=%d blocks=%s",
+            resp.stop_reason,
+            resp.usage.output_tokens,
+            [block.type for block in resp.content],
+        )
+
+        handler = HANDLERS.get(resp.stop_reason, on_unknown)
+        if handler(state, resp):
+            break
+
+    set_run_metadata(
+        model=MODEL,
+        steps=state.metadata["steps"],
+        turns=state.metadata["turns"],
+        stop_reason=state.stop_reason,
+        tool_calls=len(state.metadata["tool_calls"]),
+    )
+    return state
+```
+
+## Project Layout
+
+```md
+anthropic-sdk/
+├── cli.py                  `kata run`: builds the client, calls agent.main
+├── agent.py                run(): the loop; main(): runs it and prints
+├── state.py                AgentState: what the loop and handlers share
+├── tracing.py              LangSmith: wrap the client, flush traces
+├── style.py                terminal colours and errors
+│
+├── api/                    enums for the Messages API
+│   ├── request.py          values you send (roles, block types)
+│   └── response.py         values you receive (stop reasons, block types)
+│
+├── handlers/               one per stop_reason
+│   ├── __init__.py         HANDLERS: stop_reason → handler
+│   ├── tool_use.py         run the tools, send the results
+│   ├── end_turn.py         take the final answer
+│   ├── max_tokens.py       retry with more room (or stitch)
+│   ├── pause_turn.py       API hasn't finished, send again as is
+│   ├── stop_sequence.py    API generation stopped at stop_sequences
+│   └── stop.py             refusal, context window full, unknown
+│
+├── tools/                  what the model can call
+│   ├── __init__.py         TOOLS, SCHEMAS, run_tool
+│   ├── base.py             @tool decorator
+│   ├── schemas.py          pydantic Result, Card, Status
+│   └── create_card, delete_card, find_card, get_card,
+│       list_cards, schedule_card   (one .py each)
+│
+├── db/                     in-memory card store
+│   ├── models.py           Card dataclass
+│   ├── store.py            create, read, update, delete
+│   ├── search.py           substring and fuzzy search
+│   └── seed.py             the 3 sample cards
+│
+├── prompts/
+│   ├── system.md           system prompt
+│   └── max_tokens_merge.md "continue" message
+│
+├── evals/                  real model, scored in LangSmith
+│   ├── run.py              target, dataset sync, experiment
+│   ├── graders.py          the four graders
+│   ├── judge.py            LLM judge
+│   ├── config.py           .env and project name
+│   └── cases/              create_card.py, delete_card.py
+│
+├── utils/
+│   ├── utils.py            ToolError, prompts, max_tokens helpers
+│   ├── agent.py            joins continued responses
+│   └── log.py              debug logging
+│
+├── tests/                  no API key needed; mirrors the folders above
+├── docs/                   cheatsheet, evals, system_prompt, tool_design
+├── pyproject.toml, uv.lock dependencies and the `kata` command
+└── .env.example            copy to .env (gitignored)
+```

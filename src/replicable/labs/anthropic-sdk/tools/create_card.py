@@ -1,4 +1,5 @@
 import db
+from utils.utils import ToolError
 from .base import tool
 from .schemas import Card, Result, Status
 
@@ -16,7 +17,7 @@ def create_card(title: str, content: str, replace: bool = False) -> Result:
     - never set [replace] to true without the user's agreement: replacing overwrites the existing card's content (the card keeps its [id])
     - writes data: creating adds a card, replacing overwrites one
     - returns [status] "created", "exists" or "replaced", each with [cards] holding the one card ([id], [title], [content])
-    - a missing [title] or [content] produces an error result; call again with both
+    - a missing [title] or [content], or a blank [title], produces an error result; call again with both
     - examples: [title] "Capital of France" with [content] "Paris"; then, after the user agreed to replace it, the same [title] with new [content] and [replace] true
 
     Args:
@@ -28,7 +29,13 @@ def create_card(title: str, content: str, replace: bool = False) -> Result:
         A `Result` (see schemas.py), which @tool serialises to the JSON string
         the model reads. Its shape is described in the bullets above, the only
         part of this docstring besides Args that the model sees.
+
+    Raises:
+        ToolError: The title is blank. run_tool turns it into an is_error
+            tool_result.
     """
+    if not title.strip():
+        raise ToolError("Provide a non-empty title.")
     existing = db.get_card_by_title(title)
     if existing is None:
         card = db.add_card(title, content)

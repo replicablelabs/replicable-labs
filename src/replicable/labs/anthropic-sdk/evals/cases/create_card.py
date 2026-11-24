@@ -5,7 +5,7 @@ afterwards (graders receive it under the same name):
 
 - `created`: the cards added, none if empty. Titles match ignoring case;
   `content_contains` is a substring, because the model words the content itself.
-  Every seed card must be unchanged.
+  Every seed card must be unchanged, except those in `deleted` (see `delete_card.py`).
 - `allowed_tools`: the only tools the agent may call.
 - `forbidden_calls`: calls it must not make even with an allowed tool. A call matches
   if it has every argument listed; `{"create_card": {}}` matches any `create_card` call.

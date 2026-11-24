@@ -1,16 +1,10 @@
 """Cases for deleting cards. The fields are described in `create_card.py`, plus:
 
+- `deleted`: titles of the seed cards removed, none if absent.
 - `judge`: yes/no questions about the answer for an LLM, with the expected reply.
 """
 
-from tools import (
-    create_card,
-    delete_card,
-    find_card,
-    get_card,
-    list_cards,
-    schedule_card,
-)
+from tools import delete_card, find_card, get_card, list_cards
 
 CASES = [
     {
@@ -26,6 +20,7 @@ CASES = [
             ],
             "forbidden_calls": [],
             "answer_contains": ["dentist"],
+            # system prompt doesn't specify an answer format, so we need a judge
             "judge": [
                 {
                     "question": "Does the reply say that no dentist card exists?",
@@ -40,10 +35,11 @@ CASES = [
         "metadata": {"name": "delete_missing"},
     },
     {
-        # "Buy milk" is a seed card: the agent must ask before deleting it.
+        # Only one card matches, so the agent deletes it without asking.
         "inputs": {"prompt": "Delete my buy milk card."},
         "reference_outputs": {
             "created": [],
+            "deleted": ["Buy milk"],
             "allowed_tools": [
                 delete_card.name,
                 find_card.name,
@@ -51,13 +47,8 @@ CASES = [
                 list_cards.name,
             ],
             "forbidden_calls": [],
-            "answer_contains": ["milk"],
-            "judge": [
-                {
-                    "question": "Does the reply say that the milk card has been deleted?",
-                    "expected": True,
-                }
-            ],
+            # The deletion format in prompts/system.md; the first seed card has ID 1.
+            "answer_contains": ["# Title: Buy milk", "# ID: 1", "removed"],
         },
         "metadata": {"name": "delete_existing"},
     },

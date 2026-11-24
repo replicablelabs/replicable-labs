@@ -16,7 +16,7 @@ def only_allowed_tools(outputs: dict, reference_outputs: dict) -> bool:
 
 
 def desired_result(outputs: dict, reference_outputs: dict) -> bool:
-    """Seed cards are unchanged and the only new cards are those in `created`."""
+    """The final cards are the unchanged seed cards, minus `deleted`, plus `created`."""
     raise NotImplementedError
 
 
